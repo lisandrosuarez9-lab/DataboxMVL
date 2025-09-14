@@ -16,21 +16,24 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6YXNoYWhoa2FmamljanB1cHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4MTQ1MzcsImV4cCI6MjA3MzM5MDUzN30.t2fY7woVIz8lbleve-vBAAgGj1skPtdjxZfMWiYMxks'
     );
 
-    document.getElementById('injectBtn').onclick = async () => {
-      const { data, error } = await supabase.rpc('inject_microcredito_protocol', {
-        p_documento_id: 'XYZ124',
-        p_monto: 5000,
-        p_fecha: '2023-07-15'
-      });
+document.getElementById('injectBtn').onclick = async () => {
+  const { data, error } = await supabase.rpc('inject_microcredito_protocol', {
+    p_documento_id: 'XYZ124',
+    p_monto: 5000,
+    p_fecha: '2023-07-15',
+    microcredito_id: null,
+    transaccion_id: null,
+    auditoria_id: null
+  });
 
-      if (error) {
-        console.error('Injection failed:', error.message);
-        alert('Error: ' + error.message);
-      } else {
-        console.log('Injection successful:', data);
-        alert('Microcrédito injected successfully!');
-      }
-    };
+  if (error) {
+    console.error('Injection failed:', error.message);
+    alert('Error: ' + error.message);
+  } else {
+    console.log('Injection successful:', data);
+    alert('Microcrédito injected successfully!');
+  }
+};
   </script>
 </body>
 </html>
