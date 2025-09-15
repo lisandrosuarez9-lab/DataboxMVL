@@ -17,11 +17,11 @@
   );
 
   document.getElementById('injectBtn').onclick = async () => {
-    const { data, error } = await supabase.rpc('api.inject_microcredito_protocol', {
-      p_documento_id: 'XYZ124',
-      p_monto: 5000,
-      p_fecha: '2023-07-15'
-    });
+const { data, error } = await supabase.rpc('inject_microcredito_protocol', {
+  p_documento_id: 'XYZ124',
+  p_monto: 5000,
+  p_fecha: '2023-07-15'
+});
 
     if (error) {
       console.error('Injection failed:', error.message);
