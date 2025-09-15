@@ -20,10 +20,7 @@ document.getElementById('injectBtn').onclick = async () => {
   const { data, error } = await supabase.rpc('inject_microcredito_protocol', {
     p_documento_id: 'XYZ124',
     p_monto: 5000,
-    p_fecha: '2023-07-15',
-    microcredito_id: null,
-    transaccion_id: null,
-    auditoria_id: null
+    p_fecha: '2023-07-15'
   });
 
   if (error) {
@@ -34,6 +31,6 @@ document.getElementById('injectBtn').onclick = async () => {
     alert('Microcrédito injected successfully!');
   }
 };
-  </script>
+</script>
 </body>
 </html>
