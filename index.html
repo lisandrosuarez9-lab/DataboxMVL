@@ -19,8 +19,8 @@
   document.getElementById('injectBtn').onclick = async () => {
 const { data, error } = await supabase.rpc('inject_microcredito_protocol', {
   p_documento_id: 'XYZ124',
-  p_monto: 5000,
-  p_fecha: '2023-07-15'
+  p_fecha: '2023-07-15',
+  p_monto: 5000
 });
 
     if (error) {
