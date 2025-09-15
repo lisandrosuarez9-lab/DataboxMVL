@@ -1,36 +1,442 @@
-<!-- Trigger rebuild -->
 <!DOCTYPE html>
 <html>
 <head>
-  <title>DataboxMVL Injector</title>
+  <title>DataboxMVL Injector - Debug Edition</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #333;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 10px;
+    }
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: bold;
+    }
+    .primary {
+      background: #667eea;
+      color: white;
+    }
+    .primary:hover {
+      background: #5a67d8;
+      transform: translateY(-2px);
+    }
+    .secondary {
+      background: #48bb78;
+      color: white;
+    }
+    .secondary:hover {
+      background: #38a169;
+    }
+    .danger {
+      background: #f56565;
+      color: white;
+    }
+    .warning {
+      background: #ed8936;
+      color: white;
+    }
+    .console {
+      background: #1a202c;
+      color: #68d391;
+      padding: 15px;
+      border-radius: 5px;
+      font-family: 'Courier New', monospace;
+      margin-top: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-size: 14px;
+    }
+    .log-entry {
+      margin: 5px 0;
+      padding: 5px;
+      border-left: 3px solid #4a5568;
+    }
+    .log-error {
+      color: #fc8181;
+      border-left-color: #f56565;
+    }
+    .log-success {
+      color: #68d391;
+      border-left-color: #48bb78;
+    }
+    .log-info {
+      color: #63b3ed;
+      border-left-color: #4299e1;
+    }
+    .log-warning {
+      color: #f6e05e;
+      border-left-color: #ecc94b;
+    }
+    .status {
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+    .status.success {
+      background: #c6f6d5;
+      color: #22543d;
+      border: 1px solid #48bb78;
+    }
+    .status.error {
+      background: #fed7d7;
+      color: #742a2a;
+      border: 1px solid #f56565;
+    }
+    .data-display {
+      background: #f7fafc;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 10px 0;
+      border: 1px solid #cbd5e0;
+    }
+    pre {
+      background: #2d3748;
+      color: #fff;
+      padding: 10px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+  </style>
 </head>
 <body>
-  <h1>Microcrédito Injection Dashboard</h1>
-  <button id="injectBtn">Inject Microcrédito</button>
+  <div class="container">
+    <h1>🚀 DataboxMVL Microcrédito Injector</h1>
+    
+    <div class="status" id="status" style="display:none;"></div>
+    
+    <div class="data-display">
+      <h3>📋 Test Parameters</h3>
+      <p><strong>Documento ID:</strong> XYZ124</p>
+      <p><strong>Fecha:</strong> 2025-01-15</p>
+      <p><strong>Monto:</strong> 15000</p>
+    </div>
+
+    <div class="button-group">
+      <button id="testConnection" class="secondary">🔌 Test Connection</button>
+      <button id="checkPersona" class="secondary">👤 Check Persona</button>
+      <button id="deployDebug" class="warning">🔧 Deploy Debug Function</button>
+      <button id="runDebug" class="warning">🐛 Run Debug Diagnostic</button>
+      <button id="injectWithPrefix" class="primary">💉 Inject (p_ prefix)</button>
+      <button id="injectWithoutPrefix" class="primary">💉 Inject (no prefix)</button>
+      <button id="injectJSON" class="primary">💉 Inject (JSON method)</button>
+      <button id="clearConsole" class="danger">🗑️ Clear Console</button>
+    </div>
+
+    <h3>📊 Console Output</h3>
+    <div class="console" id="console">
+      <div class="log-entry log-info">🚀 DataboxMVL Injector initialized</div>
+      <div class="log-entry log-info">📅 Current date: ${new Date().toISOString()}</div>
+    </div>
+  </div>
 
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
+  
+  // Initialize Supabase with explicit schema
   const supabase = createClient(
     'https://rzashahhkafjicjpupww.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6YXNoYWhoa2FmamljanB1cHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4MTQ1MzcsImV4cCI6MjA3MzM5MDUzN30.t2fY7woVIz8lbleve-vBAAgGj1skPtdjxZfMWiYMxks'
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6YXNoYWhoa2FmamljanB1cHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4MTQ1MzcsImV4cCI6MjA3MzM5MDUzN30.t2fY7woVIz8lbleve-vBAAgGj1skPtdjxZfMWiYMxks',
+    {
+      db: { schema: 'public' },
+      auth: { persistSession: false }
+    }
   );
 
-  document.getElementById('injectBtn').onclick = async () => {
-const { data, error } = await supabase.rpc('inject_microcredito_protocol', {
-  p_documento_id: 'XYZ124',
-  p_fecha: '2023-07-15',
-  p_monto: 5000
-});
+  // Utility functions
+  function log(message, type = 'info') {
+    const console = document.getElementById('console');
+    const entry = document.createElement('div');
+    entry.className = `log-entry log-${type}`;
+    const timestamp = new Date().toLocaleTimeString();
+    entry.innerHTML = `[${timestamp}] ${message}`;
+    console.appendChild(entry);
+    console.scrollTop = console.scrollHeight;
+  }
 
-    if (error) {
-      console.error('Injection failed:', error.message);
-      alert('Error: ' + error.message);
-    } else {
-      console.log('Injection successful:', data);
-      alert('Microcrédito injected successfully!');
+  function showStatus(message, type = 'success') {
+    const status = document.getElementById('status');
+    status.className = `status ${type}`;
+    status.textContent = message;
+    status.style.display = 'block';
+    setTimeout(() => {
+      status.style.display = 'none';
+    }, 5000);
+  }
+
+  // Test connection
+  document.getElementById('testConnection').onclick = async () => {
+    log('🔌 Testing Supabase connection...', 'info');
+    try {
+      const { data, error } = await supabase.from('persona').select('count').single();
+      if (error) throw error;
+      log('✅ Connection successful!', 'success');
+      showStatus('Connection to Supabase established!', 'success');
+    } catch (error) {
+      log(`❌ Connection failed: ${error.message}`, 'error');
+      showStatus('Connection failed!', 'error');
     }
   };
+
+  // Check if persona exists
+  document.getElementById('checkPersona').onclick = async () => {
+    log('👤 Checking for persona with documento_id = XYZ124...', 'info');
+    try {
+      const { data, error } = await supabase
+        .from('persona')
+        .select('*')
+        .eq('documento_id', 'XYZ124')
+        .single();
+      
+      if (error) throw error;
+      
+      log(`✅ Persona found: ${JSON.stringify(data, null, 2)}`, 'success');
+      showStatus(`Persona found with ID: ${data.id}`, 'success');
+      
+      // Check consentimiento
+      const { data: consent, error: consentError } = await supabase
+        .from('consentimiento')
+        .select('*')
+        .eq('persona_id', data.id)
+        .eq('tipo_dato', 'microcredito');
+      
+      if (consent && consent.length > 0) {
+        log(`✅ Consentimiento found: ${JSON.stringify(consent[0], null, 2)}`, 'success');
+      } else {
+        log('⚠️ No consentimiento found for microcredito', 'warning');
+      }
+    } catch (error) {
+      log(`❌ Error checking persona: ${error.message}`, 'error');
+      showStatus('Persona not found!', 'error');
+    }
+  };
+
+  // Deploy debug function
+  document.getElementById('deployDebug').onclick = async () => {
+    log('🔧 Deploying debug function...', 'info');
+    const debugSQL = `
+CREATE OR REPLACE FUNCTION public.debug_inject_microcredito(
+    p_documento_id text,
+    p_fecha date,
+    p_monto numeric
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_persona_id INTEGER;
+    v_debug_info jsonb;
+BEGIN
+    -- Capture raw input state
+    v_debug_info := jsonb_build_object(
+        'raw_documento_id', p_documento_id,
+        'documento_id_type', pg_typeof(p_documento_id)::text,
+        'documento_id_length', length(p_documento_id),
+        'documento_id_is_null', p_documento_id IS NULL,
+        'raw_fecha', p_fecha::text,
+        'raw_monto', p_monto::text,
+        'timestamp', now()
+    );
+    
+    -- Attempt persona resolution
+    SELECT id INTO v_persona_id 
+    FROM persona 
+    WHERE documento_id = p_documento_id;
+    
+    -- Add resolution result
+    v_debug_info := v_debug_info || jsonb_build_object(
+        'resolved_persona_id', v_persona_id,
+        'query_used', format('SELECT id FROM persona WHERE documento_id = %L', p_documento_id)
+    );
+    
+    RETURN v_debug_info;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.debug_inject_microcredito TO anon;`;
+    
+    log('📋 SQL to deploy (copy to Supabase SQL Editor):', 'info');
+    log(`<pre>${debugSQL}</pre>`, 'info');
+    showStatus('Copy the SQL above to Supabase SQL Editor', 'success');
+  };
+
+  // Run debug diagnostic
+  document.getElementById('runDebug').onclick = async () => {
+    log('🐛 Running debug diagnostic...', 'info');
+    try {
+      const { data, error } = await supabase.rpc('debug_inject_microcredito', {
+        p_documento_id: 'XYZ124',
+        p_fecha: '2025-01-15',
+        p_monto: 15000
+      });
+      
+      if (error) throw error;
+      
+      log(`📊 Debug result: ${JSON.stringify(data, null, 2)}`, 'info');
+      
+      // Analyze results
+      if (data.documento_id_is_null) {
+        log('❌ CRITICAL: documento_id is NULL at PostgreSQL level!', 'error');
+      }
+      if (data.resolved_persona_id) {
+        log(`✅ Persona resolved successfully: ID = ${data.resolved_persona_id}`, 'success');
+      } else {
+        log('⚠️ Persona resolution failed', 'warning');
+      }
+      
+      showStatus('Debug diagnostic complete - check console', 'success');
+    } catch (error) {
+      log(`❌ Debug function not found or error: ${error.message}`, 'error');
+      log('💡 Deploy the debug function first using the button above', 'warning');
+      showStatus('Debug function not deployed yet', 'error');
+    }
+  };
+
+  // Inject with p_ prefix (original method)
+  document.getElementById('injectWithPrefix').onclick = async () => {
+    log('💉 Attempting injection WITH p_ prefix...', 'info');
+    log('Parameters: { p_documento_id: "XYZ124", p_fecha: "2025-01-15", p_monto: 15000 }', 'info');
+    
+    try {
+      const { data, error } = await supabase.rpc('inject_microcredito_protocol', {
+        p_documento_id: 'XYZ124',
+        p_fecha: '2025-01-15',
+        p_monto: 15000
+      });
+      
+      if (error) throw error;
+      
+      log(`✅ Injection successful: ${data}`, 'success');
+      showStatus('Microcrédito injected successfully!', 'success');
+    } catch (error) {
+      log(`❌ Injection failed: ${error.message}`, 'error');
+      showStatus(`Error: ${error.message}`, 'error');
+    }
+  };
+
+  // Inject without p_ prefix
+  document.getElementById('injectWithoutPrefix').onclick = async () => {
+    log('💉 Attempting injection WITHOUT p_ prefix...', 'info');
+    log('Parameters: { documento_id: "XYZ124", fecha: "2025-01-15", monto: 15000 }', 'info');
+    
+    try {
+      const { data, error } = await supabase.rpc('inject_microcredito_protocol', {
+        documento_id: 'XYZ124',
+        fecha: '2025-01-15',
+        monto: 15000
+      });
+      
+      if (error) throw error;
+      
+      log(`✅ Injection successful: ${data}`, 'success');
+      showStatus('Microcrédito injected successfully!', 'success');
+    } catch (error) {
+      log(`❌ Injection failed: ${error.message}`, 'error');
+      showStatus(`Error: ${error.message}`, 'error');
+    }
+  };
+
+  // Inject using JSON method
+  document.getElementById('injectJSON').onclick = async () => {
+    log('💉 Attempting injection with JSON wrapper...', 'info');
+    log('First, deploy this function in Supabase:', 'warning');
+    
+    const jsonSQL = `
+CREATE OR REPLACE FUNCTION public.inject_microcredito_json(params jsonb)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_documento_id text;
+    v_fecha date;
+    v_monto numeric;
+    v_persona_id integer;
+BEGIN
+    v_documento_id := params->>'documento_id';
+    v_fecha := (params->>'fecha')::date;
+    v_monto := (params->>'monto')::numeric;
+    
+    SELECT id INTO v_persona_id 
+    FROM persona 
+    WHERE documento_id = v_documento_id;
+    
+    IF v_persona_id IS NULL THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'error', 'Persona not found',
+            'documento_used', v_documento_id
+        );
+    END IF;
+    
+    -- Your injection logic here
+    RETURN jsonb_build_object(
+        'success', true,
+        'persona_id', v_persona_id,
+        'message', 'Injection successful'
+    );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.inject_microcredito_json TO anon;`;
+    
+    log(`<pre>${jsonSQL}</pre>`, 'info');
+    
+    // Try to call it anyway
+    try {
+      const { data, error } = await supabase.rpc('inject_microcredito_json', {
+        params: { 
+          documento_id: 'XYZ124', 
+          fecha: '2025-01-15', 
+          monto: 15000 
+        }
+      });
+      
+      if (error) throw error;
+      
+      log(`✅ JSON injection successful: ${JSON.stringify(data, null, 2)}`, 'success');
+      showStatus('JSON method successful!', 'success');
+    } catch (error) {
+      log(`❌ JSON function not found: ${error.message}`, 'error');
+      log('💡 Deploy the JSON function first using the SQL above', 'warning');
+    }
+  };
+
+  // Clear console
+  document.getElementById('clearConsole').onclick = () => {
+    const console = document.getElementById('console');
+    console.innerHTML = '<div class="log-entry log-info">🗑️ Console cleared</div>';
+    log('🚀 Ready for new tests', 'info');
+  };
+
+  // Initial status
+  log('✅ All systems ready', 'success');
+  log('💡 Start by clicking "Test Connection" then "Check Persona"', 'info');
 </script>
+
 </body>
 </html>
