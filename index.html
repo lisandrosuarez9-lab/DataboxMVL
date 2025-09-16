@@ -1,442 +1,408 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>DataboxMVL Injector - Debug Edition</title>
+  <title>DataboxMVL Sovereign Protocol Suite</title>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
       min-height: 100vh;
+      padding: 20px;
     }
+    
     .container {
-      background: white;
-      border-radius: 10px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
       padding: 30px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      margin-bottom: 30px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
     }
+    
     h1 {
-      color: #333;
-      border-bottom: 3px solid #667eea;
-      padding-bottom: 10px;
+      color: #1e3c72;
+      font-size: 2.5em;
+      margin-bottom: 10px;
     }
-    .button-group {
+    
+    .subtitle {
+      color: #64748b;
+      font-size: 1.1em;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+    
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+    
+    .card-title {
+      font-size: 1.3em;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #1e3c72;
       display: flex;
+      align-items: center;
       gap: 10px;
-      margin: 20px 0;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #475569;
+      font-weight: 500;
+      font-size: 0.9em;
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 1em;
+      transition: border-color 0.3s;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+    
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    .trace-viewer {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+    
+    .trace-filters {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
       flex-wrap: wrap;
     }
-    button {
-      padding: 12px 24px;
-      font-size: 16px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-weight: bold;
+    
+    .trace-filters input, .trace-filters select {
+      flex: 1;
+      min-width: 150px;
     }
-    .primary {
-      background: #667eea;
-      color: white;
-    }
-    .primary:hover {
-      background: #5a67d8;
-      transform: translateY(-2px);
-    }
-    .secondary {
-      background: #48bb78;
-      color: white;
-    }
-    .secondary:hover {
-      background: #38a169;
-    }
-    .danger {
-      background: #f56565;
-      color: white;
-    }
-    .warning {
-      background: #ed8936;
-      color: white;
-    }
-    .console {
-      background: #1a202c;
-      color: #68d391;
-      padding: 15px;
-      border-radius: 5px;
-      font-family: 'Courier New', monospace;
-      margin-top: 20px;
-      max-height: 400px;
+    
+    .trace-list {
+      max-height: 500px;
       overflow-y: auto;
-      font-size: 14px;
-    }
-    .log-entry {
-      margin: 5px 0;
-      padding: 5px;
-      border-left: 3px solid #4a5568;
-    }
-    .log-error {
-      color: #fc8181;
-      border-left-color: #f56565;
-    }
-    .log-success {
-      color: #68d391;
-      border-left-color: #48bb78;
-    }
-    .log-info {
-      color: #63b3ed;
-      border-left-color: #4299e1;
-    }
-    .log-warning {
-      color: #f6e05e;
-      border-left-color: #ecc94b;
-    }
-    .status {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
       padding: 10px;
-      border-radius: 5px;
-      margin: 10px 0;
-      font-weight: bold;
     }
-    .status.success {
-      background: #c6f6d5;
-      color: #22543d;
-      border: 1px solid #48bb78;
-    }
-    .status.error {
-      background: #fed7d7;
-      color: #742a2a;
-      border: 1px solid #f56565;
-    }
-    .data-display {
-      background: #f7fafc;
+    
+    .trace-item {
       padding: 15px;
-      border-radius: 5px;
-      margin: 10px 0;
-      border: 1px solid #cbd5e0;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border-left: 4px solid #3b82f6;
+      background: #f8fafc;
+      transition: all 0.2s;
     }
-    pre {
-      background: #2d3748;
-      color: #fff;
-      padding: 10px;
-      border-radius: 5px;
-      overflow-x: auto;
+    
+    .trace-item:hover {
+      background: #f1f5f9;
+      transform: translateX(5px);
+    }
+    
+    .trace-item.denied {
+      border-left-color: #ef4444;
+    }
+    
+    .trace-item.injection {
+      border-left-color: #10b981;
+    }
+    
+    .trace-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    
+    .trace-tipo {
+      font-weight: 600;
+      color: #1e3c72;
+      text-transform: uppercase;
+      font-size: 0.9em;
+    }
+    
+    .trace-action {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+    
+    .trace-action.injection {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    
+    .trace-action.denied {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    
+    .trace-details {
+      color: #64748b;
+      font-size: 0.9em;
+      margin-top: 8px;
+    }
+    
+    .trace-timestamp {
+      color: #94a3b8;
+      font-size: 0.85em;
+      margin-top: 5px;
+    }
+    
+    .status-message {
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 15px;
+      font-weight: 500;
+    }
+    
+    .status-success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #10b981;
+    }
+    
+    .status-error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #ef4444;
+    }
+    
+    .icon {
+      width: 24px;
+      height: 24px;
+      display: inline-block;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #64748b;
+    }
+    
+    .spinner {
+      border: 3px solid #f3f4f6;
+      border-top: 3px solid #3b82f6;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🚀 DataboxMVL Microcrédito Injector</h1>
-    
-    <div class="status" id="status" style="display:none;"></div>
-    
-    <div class="data-display">
-      <h3>📋 Test Parameters</h3>
-      <p><strong>Documento ID:</strong> XYZ124</p>
-      <p><strong>Fecha:</strong> 2025-01-15</p>
-      <p><strong>Monto:</strong> 15000</p>
+    <div class="header">
+      <h1>🛡️ DataboxMVL Sovereign Protocol Suite</h1>
+      <div class="subtitle">Identity-centric data injection with consent enforcement</div>
     </div>
 
-    <div class="button-group">
-      <button id="testConnection" class="secondary">🔌 Test Connection</button>
-      <button id="checkPersona" class="secondary">👤 Check Persona</button>
-      <button id="deployDebug" class="warning">🔧 Deploy Debug Function</button>
-      <button id="runDebug" class="warning">🐛 Run Debug Diagnostic</button>
-      <button id="injectWithPrefix" class="primary">💉 Inject (p_ prefix)</button>
-      <button id="injectWithoutPrefix" class="primary">💉 Inject (no prefix)</button>
-      <button id="injectJSON" class="primary">💉 Inject (JSON method)</button>
-      <button id="clearConsole" class="danger">🗑️ Clear Console</button>
+    <div class="grid">
+      <!-- Microcrédito Protocol -->
+      <div class="card">
+        <div class="card-title">
+          <span>💰</span>
+          Microcrédito Protocol
+        </div>
+        <form id="microcreditoForm">
+          <div class="form-group">
+            <label>Documento ID</label>
+            <input type="text" id="micro_documento" value="XYZ124" required>
+          </div>
+          <div class="form-group">
+            <label>Fecha</label>
+            <input type="date" id="micro_fecha" value="2025-01-15" required>
+          </div>
+          <div class="form-group">
+            <label>Monto</label>
+            <input type="number" id="micro_monto" value="15000" required>
+          </div>
+          <button type="submit">Inject Microcrédito</button>
+          <div id="microStatus"></div>
+        </form>
+      </div>
+
+      <!-- Empleo Protocol -->
+      <div class="card">
+        <div class="card-title">
+          <span>💼</span>
+          Empleo Protocol
+        </div>
+        <form id="empleoForm">
+          <div class="form-group">
+            <label>Documento ID</label>
+            <input type="text" id="empleo_documento" value="XYZ124" required>
+          </div>
+          <div class="form-group">
+            <label>Fecha Inicio</label>
+            <input type="date" id="empleo_fecha_inicio" value="2025-01-15" required>
+          </div>
+          <div class="form-group">
+            <label>Empresa</label>
+            <input type="text" id="empleo_empresa" value="DataboxMVL Corp" required>
+          </div>
+          <div class="form-group">
+            <label>Cargo</label>
+            <input type="text" id="empleo_cargo" value="Protocol Engineer" required>
+          </div>
+          <button type="submit">Inject Empleo</button>
+          <div id="empleoStatus"></div>
+        </form>
+      </div>
+
+      <!-- Ingreso Protocol -->
+      <div class="card">
+        <div class="card-title">
+          <span>📊</span>
+          Ingreso Protocol
+        </div>
+        <form id="ingresoForm">
+          <div class="form-group">
+            <label>Documento ID</label>
+            <input type="text" id="ingreso_documento" value="XYZ124" required>
+          </div>
+          <div class="form-group">
+            <label>Fuente</label>
+            <input type="text" id="ingreso_fuente" value="Salario" required>
+          </div>
+          <div class="form-group">
+            <label>Monto</label>
+            <input type="number" id="ingreso_monto" value="50000" required>
+          </div>
+          <div class="form-group">
+            <label>Frecuencia</label>
+            <select id="ingreso_frecuencia" required>
+              <option value="mensual">Mensual</option>
+              <option value="quincenal">Quincenal</option>
+              <option value="semanal">Semanal</option>
+            </select>
+          </div>
+          <button type="submit">Inject Ingreso</button>
+          <div id="ingresoStatus"></div>
+        </form>
+      </div>
+
+      <!-- Educación Protocol -->
+      <div class="card">
+        <div class="card-title">
+          <span>🎓</span>
+          Educación Protocol
+        </div>
+        <form id="educacionForm">
+          <div class="form-group">
+            <label>Documento ID</label>
+            <input type="text" id="educacion_documento" value="XYZ124" required>
+          </div>
+          <div class="form-group">
+            <label>Institución</label>
+            <input type="text" id="educacion_institucion" value="Universidad Soberana" required>
+          </div>
+          <div class="form-group">
+            <label>Nivel</label>
+            <select id="educacion_nivel" required>
+              <option value="Licenciatura">Licenciatura</option>
+              <option value="Maestría">Maestría</option>
+              <option value="Doctorado">Doctorado</option>
+              <option value="Técnico">Técnico</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Fecha Graduación</label>
+            <input type="date" id="educacion_fecha_graduacion" value="2020-12-15" required>
+          </div>
+          <button type="submit">Inject Educación</button>
+          <div id="educacionStatus"></div>
+        </form>
+      </div>
     </div>
 
-    <h3>📊 Console Output</h3>
-    <div class="console" id="console">
-      <div class="log-entry log-info">🚀 DataboxMVL Injector initialized</div>
-      <div class="log-entry log-info">📅 Current date: ${new Date().toISOString()}</div>
+    <!-- Trace Viewer -->
+    <div class="trace-viewer">
+      <div class="card-title">
+        <span>📜</span>
+        Trace Viewer - Auditoría
+      </div>
+      
+      <div class="trace-filters">
+        <input type="text" id="trace_documento" placeholder="Documento ID" value="XYZ124">
+        <select id="trace_tipo">
+          <option value="">Todos los protocolos</option>
+          <option value="microcredito">Microcrédito</option>
+          <option value="empleo">Empleo</option>
+          <option value="ingreso">Ingreso</option>
+          <option value="educacion">Educación</option>
+        </select>
+        <button onclick="loadTraces()">Load Traces</button>
+      </div>
+      
+      <div class="trace-list" id="traceList">
+        <div class="loading">
+          <div class="spinner"></div>
+          <p>Click "Load Traces" to fetch audit records</p>
+        </div>
+      </div>
     </div>
   </div>
 
-<script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-  
-  // Initialize Supabase with explicit schema
-  const supabase = createClient(
-    'https://rzashahhkafjicjpupww.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6YXNoYWhoa2FmamljanB1cHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4MTQ1MzcsImV4cCI6MjA3MzM5MDUzN30.t2fY7woVIz8lbleve-vBAAgGj1skPtdjxZfMWiYMxks',
-    {
-      db: { schema: 'public' },
-      auth: { persistSession: false }
-    }
-  );
-
-  // Utility functions
-  function log(message, type = 'info') {
-    const console = document.getElementById('console');
-    const entry = document.createElement('div');
-    entry.className = `log-entry log-${type}`;
-    const timestamp = new Date().toLocaleTimeString();
-    entry.innerHTML = `[${timestamp}] ${message}`;
-    console.appendChild(entry);
-    console.scrollTop = console.scrollHeight;
-  }
-
-  function showStatus(message, type = 'success') {
-    const status = document.getElementById('status');
-    status.className = `status ${type}`;
-    status.textContent = message;
-    status.style.display = 'block';
-    setTimeout(() => {
-      status.style.display = 'none';
-    }, 5000);
-  }
-
-  // Test connection
-  document.getElementById('testConnection').onclick = async () => {
-    log('🔌 Testing Supabase connection...', 'info');
-    try {
-      const { data, error } = await supabase.from('persona').select('count').single();
-      if (error) throw error;
-      log('✅ Connection successful!', 'success');
-      showStatus('Connection to Supabase established!', 'success');
-    } catch (error) {
-      log(`❌ Connection failed: ${error.message}`, 'error');
-      showStatus('Connection failed!', 'error');
-    }
-  };
-
-  // Check if persona exists
-  document.getElementById('checkPersona').onclick = async () => {
-    log('👤 Checking for persona with documento_id = XYZ124...', 'info');
-    try {
-      const { data, error } = await supabase
-        .from('persona')
-        .select('*')
-        .eq('documento_id', 'XYZ124')
-        .single();
-      
-      if (error) throw error;
-      
-      log(`✅ Persona found: ${JSON.stringify(data, null, 2)}`, 'success');
-      showStatus(`Persona found with ID: ${data.id}`, 'success');
-      
-      // Check consentimiento
-      const { data: consent, error: consentError } = await supabase
-        .from('consentimiento')
-        .select('*')
-        .eq('persona_id', data.id)
-        .eq('tipo_dato', 'microcredito');
-      
-      if (consent && consent.length > 0) {
-        log(`✅ Consentimiento found: ${JSON.stringify(consent[0], null, 2)}`, 'success');
-      } else {
-        log('⚠️ No consentimiento found for microcredito', 'warning');
-      }
-    } catch (error) {
-      log(`❌ Error checking persona: ${error.message}`, 'error');
-      showStatus('Persona not found!', 'error');
-    }
-  };
-
-  // Deploy debug function
-  document.getElementById('deployDebug').onclick = async () => {
-    log('🔧 Deploying debug function...', 'info');
-    const debugSQL = `
-CREATE OR REPLACE FUNCTION public.debug_inject_microcredito(
-    p_documento_id text,
-    p_fecha date,
-    p_monto numeric
-)
-RETURNS jsonb
-LANGUAGE plpgsql
-AS $$
-DECLARE
-    v_persona_id INTEGER;
-    v_debug_info jsonb;
-BEGIN
-    -- Capture raw input state
-    v_debug_info := jsonb_build_object(
-        'raw_documento_id', p_documento_id,
-        'documento_id_type', pg_typeof(p_documento_id)::text,
-        'documento_id_length', length(p_documento_id),
-        'documento_id_is_null', p_documento_id IS NULL,
-        'raw_fecha', p_fecha::text,
-        'raw_monto', p_monto::text,
-        'timestamp', now()
-    );
-    
-    -- Attempt persona resolution
-    SELECT id INTO v_persona_id 
-    FROM persona 
-    WHERE documento_id = p_documento_id;
-    
-    -- Add resolution result
-    v_debug_info := v_debug_info || jsonb_build_object(
-        'resolved_persona_id', v_persona_id,
-        'query_used', format('SELECT id FROM persona WHERE documento_id = %L', p_documento_id)
-    );
-    
-    RETURN v_debug_info;
-END;
-$$;
-
-GRANT EXECUTE ON FUNCTION public.debug_inject_microcredito TO anon;`;
-    
-    log('📋 SQL to deploy (copy to Supabase SQL Editor):', 'info');
-    log(`<pre>${debugSQL}</pre>`, 'info');
-    showStatus('Copy the SQL above to Supabase SQL Editor', 'success');
-  };
-
-  // Run debug diagnostic
-  document.getElementById('runDebug').onclick = async () => {
-    log('🐛 Running debug diagnostic...', 'info');
-    try {
-      const { data, error } = await supabase.rpc('debug_inject_microcredito', {
-        p_documento_id: 'XYZ124',
-        p_fecha: '2025-01-15',
-        p_monto: 15000
-      });
-      
-      if (error) throw error;
-      
-      log(`📊 Debug result: ${JSON.stringify(data, null, 2)}`, 'info');
-      
-      // Analyze results
-      if (data.documento_id_is_null) {
-        log('❌ CRITICAL: documento_id is NULL at PostgreSQL level!', 'error');
-      }
-      if (data.resolved_persona_id) {
-        log(`✅ Persona resolved successfully: ID = ${data.resolved_persona_id}`, 'success');
-      } else {
-        log('⚠️ Persona resolution failed', 'warning');
-      }
-      
-      showStatus('Debug diagnostic complete - check console', 'success');
-    } catch (error) {
-      log(`❌ Debug function not found or error: ${error.message}`, 'error');
-      log('💡 Deploy the debug function first using the button above', 'warning');
-      showStatus('Debug function not deployed yet', 'error');
-    }
-  };
-
-  // Inject with p_ prefix (original method)
-  document.getElementById('injectWithPrefix').onclick = async () => {
-    log('💉 Attempting injection WITH p_ prefix...', 'info');
-    log('Parameters: { p_documento_id: "XYZ124", p_fecha: "2025-01-15", p_monto: 15000 }', 'info');
-    
-    try {
-      const { data, error } = await supabase.rpc('inject_microcredito_protocol', {
-        p_documento_id: 'XYZ124',
-        p_fecha: '2025-01-15',
-        p_monto: 15000
-      });
-      
-      if (error) throw error;
-      
-      log(`✅ Injection successful: ${data}`, 'success');
-      showStatus('Microcrédito injected successfully!', 'success');
-    } catch (error) {
-      log(`❌ Injection failed: ${error.message}`, 'error');
-      showStatus(`Error: ${error.message}`, 'error');
-    }
-  };
-
-  // Inject without p_ prefix
-  document.getElementById('injectWithoutPrefix').onclick = async () => {
-    log('💉 Attempting injection WITHOUT p_ prefix...', 'info');
-    log('Parameters: { documento_id: "XYZ124", fecha: "2025-01-15", monto: 15000 }', 'info');
-    
-    try {
-      const { data, error } = await supabase.rpc('inject_microcredito_protocol', {
-        documento_id: 'XYZ124',
-        fecha: '2025-01-15',
-        monto: 15000
-      });
-      
-      if (error) throw error;
-      
-      log(`✅ Injection successful: ${data}`, 'success');
-      showStatus('Microcrédito injected successfully!', 'success');
-    } catch (error) {
-      log(`❌ Injection failed: ${error.message}`, 'error');
-      showStatus(`Error: ${error.message}`, 'error');
-    }
-  };
-
-  // Inject using JSON method
-  document.getElementById('injectJSON').onclick = async () => {
-    log('💉 Attempting injection with JSON wrapper...', 'info');
-    log('First, deploy this function in Supabase:', 'warning');
-    
-    const jsonSQL = `
-CREATE OR REPLACE FUNCTION public.inject_microcredito_json(params jsonb)
-RETURNS jsonb
-LANGUAGE plpgsql
-AS $$
-DECLARE
-    v_documento_id text;
-    v_fecha date;
-    v_monto numeric;
-    v_persona_id integer;
-BEGIN
-    v_documento_id := params->>'documento_id';
-    v_fecha := (params->>'fecha')::date;
-    v_monto := (params->>'monto')::numeric;
-    
-    SELECT id INTO v_persona_id 
-    FROM persona 
-    WHERE documento_id = v_documento_id;
-    
-    IF v_persona_id IS NULL THEN
-        RETURN jsonb_build_object(
-            'success', false,
-            'error', 'Persona not found',
-            'documento_used', v_documento_id
-        );
-    END IF;
-    
-    -- Your injection logic here
-    RETURN jsonb_build_object(
-        'success', true,
-        'persona_id', v_persona_id,
-        'message', 'Injection successful'
-    );
-END;
-$$;
-
-GRANT EXECUTE ON FUNCTION public.inject_microcredito_json TO anon;`;
-    
-    log(`<pre>${jsonSQL}</pre>`, 'info');
-    
-    // Try to call it anyway
-    try {
-      const { data, error } = await supabase.rpc('inject_microcredito_json', {
-        params: { 
-          documento_id: 'XYZ124', 
-          fecha: '2025-01-15', 
-          monto: 15000 
-        }
-      });
-      
-      if (error) throw error;
-      
-      log(`✅ JSON injection successful: ${JSON.stringify(data, null, 2)}`, 'success');
-      showStatus('JSON method successful!', 'success');
-    } catch (error) {
-      log(`❌ JSON function not found: ${error.message}`, 'error');
-      log('💡 Deploy the JSON function first using the SQL above', 'warning');
-    }
-  };
-
-  // Clear console
-  document.getElementById('clearConsole').onclick = () => {
-    const console = document.getElementById('console');
-    console.innerHTML = '<div class="log-entry log-info">🗑️ Console cleared</div>';
-    log('🚀 Ready for new tests', 'info');
-  };
-
-  // Initial status
-  log('✅ All systems ready', 'success');
-  log('💡 Start by clicking "Test Connection" then "Check Persona"', 'info');
-</script>
-
-</body>
-</html>
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
