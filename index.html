@@ -1288,8 +1288,12 @@
       </div>
     </div>
 
-    <!-- Dashboard Content -->
-    <div class="main-content" id="dashboardContent" style="display: none;">
+  </div>
+  <!-- End Main Wrapper -->
+
+  <!-- Dashboard Content -->
+  <div class="main-wrapper" id="dashboardWrapper" style="display: none;">
+    <div class="main-content" id="dashboardContent">
       <!-- Page Header -->
       <div class="header">
         <h1>🛡️ Persona Flag Audit Dashboard</h1>
@@ -1426,142 +1430,7 @@
       </div>
     </div>
   </div>
-  <!-- End Main Content -->
-
-    <!-- Dashboard Content -->
-    <div class="main-content" id="dashboardContent" style="display: none;">
-      <!-- Page Header -->
-      <div class="header">
-        <h1>🛡️ Persona Flag Audit Dashboard</h1>
-        <div class="subtitle">Real-time compliance monitoring and audit trail</div>
-      </div>
-
-      <!-- KPI Cards Row -->
-      <div class="kpi-row">
-        <div class="kpi-card">
-          <div class="kpi-title">Total Personas</div>
-          <div class="kpi-value" id="totalPersonasCount">-</div>
-          <div class="kpi-timestamp" id="totalPersonasTimestamp">-</div>
-        </div>
-        
-        <div class="kpi-card">
-          <div class="kpi-title">Review Needed</div>
-          <div class="kpi-value" id="reviewNeededCount">-</div>
-          <div class="kpi-timestamp" id="reviewNeededTimestamp">-</div>
-        </div>
-        
-        <div class="kpi-card">
-          <div class="kpi-title">Audit Entries</div>
-          <div class="kpi-value" id="auditCountValue">-</div>
-          <div class="kpi-timestamp" id="auditCountTimestamp">-</div>
-        </div>
-      </div>
-
-      <!-- Database Schema Overview -->
-      <div class="database-overview">
-        <div class="card">
-          <div class="card-title">
-            <span>🗄️</span>
-            Database Schema Overview
-          </div>
-          <div class="database-tabs">
-            <button class="tab-btn active" onclick="showDatabaseTab('tables')">Tables</button>
-            <button class="tab-btn" onclick="showDatabaseTab('audit')">Audit Schema</button>
-            <button class="tab-btn" onclick="showDatabaseTab('connections')">Live Connections</button>
-          </div>
-          <div id="databaseTabContent" class="database-tab-content">
-            <!-- Content will be populated by JavaScript -->
-          </div>
-        </div>
-      </div>
-
-      <!-- Main Dashboard Grid -->
-      <div class="dashboard-content-grid">
-        <!-- Left Column: Audit Table -->
-        <div class="audit-section">
-          <div class="card">
-            <div class="card-title">
-              <span>📋</span>
-              Audit Log
-            </div>
-            
-            <!-- Filters -->
-            <div class="audit-filters">
-              <input type="number" id="filterPersonaId" placeholder="Persona ID" class="filter-input">
-              <input type="text" id="filterActor" placeholder="Actor" class="filter-input">
-              <input type="date" id="filterStartDate" class="filter-input">
-              <input type="date" id="filterEndDate" class="filter-input">
-              <button onclick="applyAuditFilters()" class="btn-secondary">Apply Filters</button>
-            </div>
-            
-            <!-- Table Container -->
-            <div class="table-container">
-              <table class="audit-table">
-                <thead class="sticky-header">
-                  <tr>
-                    <th>Persona ID</th>
-                    <th>Field</th>
-                    <th>Old Value</th>
-                    <th>New Value</th>
-                    <th>Changed By</th>
-                    <th>Changed At</th>
-                  </tr>
-                </thead>
-                <tbody id="auditTableBody">
-                  <!-- Content populated by JavaScript -->
-                </tbody>
-              </table>
-            </div>
-            
-            <!-- Pagination Controls -->
-            <div class="pagination-controls">
-              <button onclick="previousPage()" class="btn-secondary">Previous</button>
-              <span id="pageInfo">Page 1 of 10</span>
-              <button onclick="nextPage()" class="btn-secondary">Next</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right Column: Graphs and Controls -->
-        <div class="graphs-stack">
-          <div class="card">
-            <div class="card-title">
-              <span>📊</span>
-              Audit Metrics
-              <span class="refresh-indicator" id="graphsRefresh">Updated just now</span>
-            </div>
-            
-            <div class="graph-item">
-              <h4>Daily Review Flags</h4>
-              <div id="dailyReviewChart" style="height: 200px; background: #f8fafc; display: flex; align-items: center; justify-content: center; color: #6b7280;">
-                Chart visualization (mock data)
-              </div>
-            </div>
-            
-            <div class="graph-item">
-              <h4>Audit Activity Timeline</h4>
-              <div id="auditTimelineChart" style="height: 200px; background: #f8fafc; display: flex; align-items: center; justify-content: center; color: #6b7280;">
-                Timeline visualization (mock data)
-              </div>
-            </div>
-          </div>
-          
-          <div class="card" id="personaControls" style="display: none;">
-            <div class="card-title">
-              <span>⚙️</span>
-              Test Persona Controls
-            </div>
-            
-            <div id="toggleControlsList">
-              <!-- Toggle controls will be populated here -->
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-  <!-- End Main Wrapper -->
+  <!-- End Dashboard Wrapper -->
 
   <!-- Login Page -->
   <div id="loginContent" style="display: none;">
@@ -1676,21 +1545,21 @@
 
       showMainPage() {
         document.getElementById('mainContent').style.display = 'block';
-        document.getElementById('dashboardContent').style.display = 'none';
+        document.getElementById('dashboardWrapper').style.display = 'none';
         document.getElementById('loginContent').style.display = 'none';
         
         // Remove active classes
-        document.getElementById('dashboardContent').classList.remove('active');
+        document.getElementById('dashboardWrapper').classList.remove('active');
         document.getElementById('loginContent').classList.remove('active');
       }
 
       showLoginPage() {
         document.getElementById('mainContent').style.display = 'none';
-        document.getElementById('dashboardContent').style.display = 'none';
+        document.getElementById('dashboardWrapper').style.display = 'none';
         document.getElementById('loginContent').style.display = 'block';
         
         // Add active class
-        document.getElementById('dashboardContent').classList.remove('active');
+        document.getElementById('dashboardWrapper').classList.remove('active');
         document.getElementById('loginContent').classList.add('active');
       }
 
@@ -1699,11 +1568,11 @@
         document.getElementById('mainContent').style.display = 'none';
         document.getElementById('loginContent').style.display = 'none';
         
-        // Show dashboard content
-        const dashboard = document.getElementById('dashboardContent');
-        dashboard.style.display = 'block';
-        dashboard.style.visibility = 'visible';
-        dashboard.classList.add('active');
+        // Show dashboard wrapper
+        const dashboardWrapper = document.getElementById('dashboardWrapper');
+        dashboardWrapper.style.display = 'block';
+        dashboardWrapper.style.visibility = 'visible';
+        dashboardWrapper.classList.add('active');
         
         // Update navigation state
         updateNavigationForRole(role);
