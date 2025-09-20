@@ -1,0 +1,28 @@
+name: Audit Infra Verification
+
+on:
+  push:
+    branches:
+      - main
+      - feat/audit-infra-sql
+
+jobs:
+  verify-audit-infra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run audit verification
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          echo "Running audit verification checks..."
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -q -f db/audit_infra/09_continuous_verification.sql | tee verification.out
+
+          if grep -qE '\bf\b' verification.out; then
+            echo "❌ Audit verification failed"
+            exit 1
+          else
+            echo "✅ Audit verification passed"
+          fi
