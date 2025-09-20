@@ -632,6 +632,8 @@
     .main-content {
       padding: 30px;
       margin-bottom: 60px; /* Space for footer */
+      min-height: calc(100vh - 120px);
+      background: #f8fafc;
     }
 
     /* Footer */
@@ -691,6 +693,13 @@
       visibility: visible !important;
       opacity: 1 !important;
       z-index: 2 !important;
+      min-height: 100vh !important;
+      position: relative !important;
+    }
+
+    #dashboardContent.active {
+      display: block !important;
+      height: auto !important;
     }
 
     /* Force KPI cards to be visible */
@@ -698,6 +707,9 @@
       display: grid !important;
       visibility: visible !important;
       opacity: 1 !important;
+      grid-template-columns: repeat(3, 1fr) !important;
+      gap: 20px !important;
+      margin-bottom: 30px !important;
     }
 
     .kpi-card {
@@ -705,6 +717,10 @@
       visibility: visible !important;
       opacity: 1 !important;
       min-height: 120px !important;
+      background: white !important;
+      padding: 20px !important;
+      border-radius: 8px !important;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
     }
 
     /* Force dashboard grid to be visible */
