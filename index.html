@@ -438,11 +438,14 @@
       position: relative;
       width: 100%;
       min-height: 100vh;
-      display: none;
     }
 
     #dashboardContent.active, #loginContent.active {
       display: block !important;
+    }
+
+    #mainContent {
+      display: block;
     }
 
     @media (max-width: 768px) {
@@ -848,10 +851,14 @@
       showPersonaFlagAuditDashboard(role) {
         document.getElementById('mainContent').style.display = 'none';
         document.getElementById('dashboardContent').style.display = 'block';
+        document.getElementById('dashboardContent').style.visibility = 'visible';
         document.getElementById('loginContent').style.display = 'none';
         
-        // Add active class
-        document.getElementById('dashboardContent').classList.add('active');
+        // Add active class and force visibility
+        const dashboard = document.getElementById('dashboardContent');
+        dashboard.classList.add('active');
+        dashboard.style.cssText = 'display: block !important; visibility: visible !important; position: relative !important; width: 100% !important; min-height: 100vh !important;';
+        
         document.getElementById('loginContent').classList.remove('active');
         
         // Display current role
