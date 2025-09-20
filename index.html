@@ -629,6 +629,29 @@
       margin-left: 60px;
     }
 
+    /* Dashboard wrapper specific styles */
+    #dashboardWrapper {
+      position: fixed;
+      top: 60px;
+      left: 250px;
+      right: 0;
+      bottom: 60px;
+      z-index: 1000;
+      overflow: auto;
+      background: #f8fafc;
+    }
+
+    #dashboardWrapper.sidebar-collapsed {
+      left: 60px;
+    }
+
+    #dashboardWrapper #dashboardContent {
+      width: 100%;
+      height: 100%;
+      padding: 30px;
+      box-sizing: border-box;
+    }
+
     .main-content {
       padding: 30px;
       margin-bottom: 60px; /* Space for footer */
@@ -710,12 +733,31 @@
       grid-template-columns: repeat(3, 1fr) !important;
       gap: 20px !important;
       margin-bottom: 30px !important;
+      width: 100% !important;
     }
 
     .kpi-card {
       display: block !important;
       visibility: visible !important;
       opacity: 1 !important;
+      min-height: 120px !important;
+      background: white !important;
+      width: 100% !important;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Ensure dashboard header is visible */
+    #dashboardContent .header {
+      display: block !important;
+      width: 100% !important;
+      margin-bottom: 30px !important;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
       min-height: 120px !important;
       background: white !important;
       padding: 20px !important;
