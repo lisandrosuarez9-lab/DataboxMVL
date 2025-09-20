@@ -457,11 +457,507 @@
         grid-template-columns: 1fr;
       }
     }
+    /* Global Navigation Bar */
+    .global-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 1000;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      color: #1e3c72;
+      font-size: 1.2em;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+    }
+
+    .nav-link {
+      color: #374151;
+      text-decoration: none;
+      font-weight: 500;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+
+    .nav-link:hover {
+      background: #f3f4f6;
+    }
+
+    .nav-link.active {
+      background: #1e3c72;
+      color: white;
+    }
+
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .user-role-badge {
+      padding: 4px 12px;
+      background: #f0f9ff;
+      color: #0369a1;
+      border-radius: 12px;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+
+    .logout-btn {
+      background: #dc2626;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85em;
+      transition: background 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: #b91c1c;
+    }
+
+    /* Left Sidebar Navigation */
+    .sidebar {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      width: 250px;
+      height: calc(100vh - 60px);
+      background: #f8fafc;
+      border-right: 1px solid #e5e7eb;
+      padding: 20px 0;
+      z-index: 999;
+      transition: width 0.3s ease;
+      overflow-x: hidden;
+    }
+
+    .sidebar.collapsed {
+      width: 60px;
+    }
+
+    .sidebar-toggle {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      font-size: 1.2em;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 4px;
+      color: #6b7280;
+    }
+
+    .sidebar-toggle:hover {
+      background: #e5e7eb;
+    }
+
+    .sidebar-nav {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .sidebar-nav-item {
+      margin: 0;
+    }
+
+    .sidebar-nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      color: #374151;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .sidebar-nav-link:hover {
+      background: #e5e7eb;
+    }
+
+    .sidebar-nav-link.active {
+      background: #1e3c72;
+      color: white;
+    }
+
+    .sidebar-nav-icon {
+      width: 20px;
+      text-align: center;
+      font-size: 1.1em;
+    }
+
+    .sidebar-nav-text {
+      transition: opacity 0.3s ease;
+    }
+
+    .sidebar.collapsed .sidebar-nav-text {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Main Content Area */
+    .main-wrapper {
+      margin-left: 250px;
+      margin-top: 60px;
+      min-height: calc(100vh - 60px);
+      transition: margin-left 0.3s ease;
+    }
+
+    .main-wrapper.sidebar-collapsed {
+      margin-left: 60px;
+    }
+
+    .main-content {
+      padding: 30px;
+      margin-bottom: 60px; /* Space for footer */
+    }
+
+    /* Footer */
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #f8fafc;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 998;
+      font-size: 0.85em;
+      color: #6b7280;
+    }
+
+    .footer-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .compliance-disclaimer {
+      font-style: italic;
+    }
+
+    /* Update body padding for fixed elements */
+    body {
+      padding: 0;
+      margin: 0;
+    }
+
+    /* Hide original container styles for dashboard */
+    #dashboardContent .container {
+      max-width: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Update dashboard layout for new structure */
+    .dashboard-content-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    /* Additional styles for new layout */
+    .sticky-header th {
+      position: sticky;
+      top: 0;
+      background: #f8fafc;
+      z-index: 10;
+    }
+
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 20px;
+      padding: 15px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .graphs-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    .graph-item {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 15px;
+      background: #f9fafb;
+    }
+
+    .graph-item h4 {
+      margin: 0 0 10px 0;
+      color: #374151;
+      font-size: 1em;
+    }
+
+    .refresh-indicator {
+      font-size: 0.8em;
+      color: #6b7280;
+      margin-left: auto;
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Enhanced button styles */
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85em;
+      transition: background 0.2s;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #4b5563;
+    }
+
+    .btn-secondary:disabled {
+      background: #d1d5db;
+      cursor: not-allowed;
+    }
+
+    /* WCAG AA Contrast compliance */
+    .kpi-value {
+      color: #1e40af; /* Higher contrast blue */
+    }
+
+    .audit-table tr.flagged-row {
+      background-color: #fef2f2;
+      border-left: 4px solid #dc2626;
+    }
+
+    .audit-table tr.flagged-row td {
+      color: #991b1b;
+    }
+
+    /* Toggle controls styling */
+    .toggle-control-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .toggle-control-item:last-child {
+      border-bottom: none;
+    }
+
+    .toggle-btn {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8em;
+      transition: background 0.2s;
+    }
+
+    .toggle-btn:hover {
+      background: #059669;
+    }
+
+    .toggle-btn.flagged {
+      background: #dc2626;
+    }
+
+    .toggle-btn.flagged:hover {
+      background: #b91c1c;
+    }
+
+    /* Ensure proper spacing and visibility */
+    .main-content .header {
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    /* Update responsive behavior */
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 60px;
+      }
+      
+      .sidebar .sidebar-nav-text {
+        opacity: 0;
+        pointer-events: none;
+      }
+      
+      .main-wrapper {
+        margin-left: 60px;
+      }
+      
+      .dashboard-content-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .global-nav {
+        padding: 0 15px;
+      }
+      
+      .nav-links {
+        display: none;
+      }
+      
+      .sidebar {
+        width: 60px;
+      }
+      
+      .main-wrapper {
+        margin-left: 60px;
+      }
+      
+      .main-content {
+        padding: 20px 15px;
+      }
+      
+      .kpi-row {
+        grid-template-columns: 1fr;
+      }
+      
+      .pagination-controls {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .audit-filters {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .filter-input {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .nav-user {
+        gap: 8px;
+      }
+      
+      .user-role-badge {
+        display: none;
+      }
+      
+      .footer {
+        flex-direction: column;
+        gap: 5px;
+        height: auto;
+        padding: 10px 15px;
+      }
+      
+      .footer-info {
+        gap: 10px;
+        font-size: 0.75em;
+      }
+      
+      .compliance-disclaimer {
+        font-size: 0.75em;
+        text-align: center;
+      }
+    }
   </style>
 </head>
 <body>
-  <!-- Main Content -->
-  <div id="mainContent">
+  <!-- Global Navigation Bar -->
+  <nav class="global-nav">
+    <div class="nav-logo">
+      <span>🛡️</span>
+      <span>DataboxMVL</span>
+    </div>
+    <div class="nav-links">
+      <a href="#" class="nav-link" onclick="router.navigate('/')">Home</a>
+      <a href="#" class="nav-link active" onclick="router.navigate('/dashboard/persona-flag-audit')">Dashboard</a>
+      <a href="#" class="nav-link">Reports</a>
+      <a href="#" class="nav-link">Settings</a>
+    </div>
+    <div class="nav-user">
+      <span id="navUserRole" class="user-role-badge">Guest</span>
+      <button id="navLogout" class="logout-btn" onclick="logout()" style="display: none;">Logout</button>
+    </div>
+  </nav>
+
+  <!-- Left Sidebar Navigation -->
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+    <ul class="sidebar-nav">
+      <li class="sidebar-nav-item">
+        <a href="#" class="sidebar-nav-link active" onclick="router.navigate('/dashboard/persona-flag-audit')">
+          <span class="sidebar-nav-icon">📊</span>
+          <span class="sidebar-nav-text">Dashboard</span>
+        </a>
+      </li>
+      <li class="sidebar-nav-item">
+        <a href="#" class="sidebar-nav-link">
+          <span class="sidebar-nav-icon">👥</span>
+          <span class="sidebar-nav-text">Personas</span>
+        </a>
+      </li>
+      <li class="sidebar-nav-item">
+        <a href="#" class="sidebar-nav-link">
+          <span class="sidebar-nav-icon">📋</span>
+          <span class="sidebar-nav-text">Audit Logs</span>
+        </a>
+      </li>
+      <li class="sidebar-nav-item">
+        <a href="#" class="sidebar-nav-link">
+          <span class="sidebar-nav-icon">📈</span>
+          <span class="sidebar-nav-text">Reports</span>
+        </a>
+      </li>
+      <li class="sidebar-nav-item">
+        <a href="#" class="sidebar-nav-link">
+          <span class="sidebar-nav-icon">⚙️</span>
+          <span class="sidebar-nav-text">Settings</span>
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main Content Wrapper -->
+  <div class="main-wrapper" id="mainWrapper">
+    <!-- Main Content -->
+    <div id="mainContent">
     <div class="container">
     <div class="header">
       <h1>🛡️ DataboxMVL Sovereign Protocol Suite</h1>
@@ -648,16 +1144,12 @@
     </div>
   </div>
 
-  <!-- Dashboard Page -->
-  <div id="dashboardContent" style="display: none;">
-    <div class="container">
+    <!-- Dashboard Content -->
+    <div class="main-content" id="dashboardContent" style="display: none;">
+      <!-- Page Header -->
       <div class="header">
         <h1>🛡️ Persona Flag Audit Dashboard</h1>
         <div class="subtitle">Real-time compliance monitoring and audit trail</div>
-        <div style="margin-top: 15px;">
-          <button onclick="router.navigate('/')" class="btn-secondary">← Back to Main</button>
-          <span id="userRoleDisplay" style="margin-left: 20px; padding: 5px 10px; background: #f0f0f0; border-radius: 4px; font-size: 0.9em;"></span>
-        </div>
       </div>
 
       <!-- KPI Cards Row -->
@@ -681,9 +1173,9 @@
         </div>
       </div>
 
-      <!-- Main Dashboard Layout -->
-      <div class="dashboard-layout">
-        <!-- Audit Table Section -->
+      <!-- Main Dashboard Grid -->
+      <div class="dashboard-content-grid">
+        <!-- Left Column: Audit Table -->
         <div class="audit-section">
           <div class="card">
             <div class="card-title">
@@ -703,7 +1195,7 @@
             <!-- Audit Table -->
             <div class="table-container">
               <table class="audit-table">
-                <thead>
+                <thead class="sticky-header">
                   <tr>
                     <th>Persona ID</th>
                     <th>Field Name</th>
@@ -720,25 +1212,40 @@
                 </tbody>
               </table>
             </div>
+            
+            <!-- Pagination Controls -->
+            <div class="pagination-controls">
+              <button id="prevPage" class="btn-secondary" disabled>Previous</button>
+              <span id="pageInfo">Page 1 of 1</span>
+              <button id="nextPage" class="btn-secondary" disabled>Next</button>
+            </div>
           </div>
         </div>
 
-        <!-- Graphs Section -->
+        <!-- Right Column: Graphs and Controls -->
         <div class="graphs-section">
+          <!-- Analytics Card -->
           <div class="card">
             <div class="card-title">
               <span>📊</span>
               Analytics
+              <span class="refresh-indicator" id="graphsRefresh">Updated: --</span>
             </div>
             
-            <div id="changesPerDayGraph" class="graph-container">
-              <h4>Changes Per Day</h4>
-              <div>Loading...</div>
-            </div>
-            
-            <div id="topActorsGraph" class="graph-container">
-              <h4>Top Actors</h4>
-              <div>Loading...</div>
+            <div class="graphs-stack">
+              <div class="graph-item">
+                <h4>Changes Per Day</h4>
+                <div id="changesPerDayGraph" class="graph-container">
+                  <div>Loading...</div>
+                </div>
+              </div>
+              
+              <div class="graph-item">
+                <h4>Top Actors</h4>
+                <div id="topActorsGraph" class="graph-container">
+                  <div>Loading...</div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -748,14 +1255,26 @@
               <span>⚙️</span>
               Test Persona Controls
             </div>
+            
             <div id="toggleControlsList">
-              Loading controls...
+              <!-- Toggle controls will be populated here -->
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-info">
+      <span>Version 1.0.0</span>
+      <span>Last Deploy: 2025-01-16 12:00:00 Z</span>
+    </div>
+    <div class="compliance-disclaimer">
+      Compliance Dashboard - Audit records are immutable and retention compliant
+    </div>
+  </footer>
 
   <script>
     // Demo mode - all functionality works with mock data
@@ -849,24 +1368,53 @@
       }
 
       showPersonaFlagAuditDashboard(role) {
+        // Hide other content
         document.getElementById('mainContent').style.display = 'none';
-        document.getElementById('dashboardContent').style.display = 'block';
-        document.getElementById('dashboardContent').style.visibility = 'visible';
         document.getElementById('loginContent').style.display = 'none';
         
-        // Add active class and force visibility
+        // Show dashboard content
         const dashboard = document.getElementById('dashboardContent');
+        dashboard.style.display = 'block';
+        dashboard.style.visibility = 'visible';
         dashboard.classList.add('active');
-        dashboard.style.cssText = 'display: block !important; visibility: visible !important; position: relative !important; width: 100% !important; min-height: 100vh !important;';
         
-        document.getElementById('loginContent').classList.remove('active');
-        
-        // Display current role
-        document.getElementById('userRoleDisplay').textContent = `Role: ${role}`;
+        // Update navigation state
+        updateNavigationForRole(role);
         
         // Initialize dashboard with role-based access
         initializePersonaFlagAuditDashboard(role);
       }
+    }
+
+    // Navigation helper functions
+    function updateNavigationForRole(role) {
+      const navUserRole = document.getElementById('navUserRole');
+      const navLogout = document.getElementById('navLogout');
+      
+      if (role) {
+        navUserRole.textContent = role === 'service_role' ? 'Service Role' : 'Compliance';
+        navUserRole.className = role === 'service_role' ? 'user-role-badge' : 'user-role-badge compliance';
+        navLogout.style.display = 'block';
+      } else {
+        navUserRole.textContent = 'Guest';
+        navUserRole.className = 'user-role-badge';
+        navLogout.style.display = 'none';
+      }
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const mainWrapper = document.getElementById('mainWrapper');
+      
+      sidebar.classList.toggle('collapsed');
+      mainWrapper.classList.toggle('sidebar-collapsed');
+    }
+
+    function logout() {
+      localStorage.removeItem('user_role');
+      localStorage.removeItem('auth_token');
+      updateNavigationForRole(null);
+      router.navigate('/');
     }
 
     // Dashboard functionality
@@ -1030,6 +1578,11 @@
         ].sort((a, b) => b.count - a.count);
 
         renderGraphs(changesPerDay, topActors);
+        
+        // Update refresh timestamp
+        const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' Z';
+        document.getElementById('graphsRefresh').textContent = `Updated: ${timestamp}`;
+        
         console.log('Graphs updated');
 
       } catch (error) {
@@ -1043,21 +1596,19 @@
       const actorsGraph = document.getElementById('topActorsGraph');
 
       if (changesData) {
-        changesGraph.innerHTML = '<h4>Changes Per Day</h4>' + 
-          changesData.map(item => `
-            <div style="margin: 5px 0; padding: 5px; background: white; border-radius: 4px;">
-              <strong>${item.day}:</strong> ${item.count} changes
-            </div>
-          `).join('');
+        changesGraph.innerHTML = changesData.map(item => `
+          <div style="margin: 5px 0; padding: 8px; background: white; border-radius: 4px; border-left: 4px solid #1e3c72;">
+            <strong>${item.day}:</strong> ${item.count} changes
+          </div>
+        `).join('');
       }
 
       if (actorsData) {
-        actorsGraph.innerHTML = '<h4>Top Actors</h4>' + 
-          actorsData.map((item, index) => `
-            <div style="margin: 5px 0; padding: 5px; background: white; border-radius: 4px;">
-              <strong>#${index + 1} ${item.changed_by}:</strong> ${item.count} changes
-            </div>
-          `).join('');
+        actorsGraph.innerHTML = actorsData.map((item, index) => `
+          <div style="margin: 5px 0; padding: 8px; background: white; border-radius: 4px; border-left: 4px solid #059669;">
+            <strong>#${index + 1} ${item.changed_by}:</strong> ${item.count} changes
+          </div>
+        `).join('');
       }
     }
 
