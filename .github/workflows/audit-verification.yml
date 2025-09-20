@@ -4,22 +4,38 @@ on:
   push:
     branches:
       - main
-      - feat/audit-infra-sql
+  pull_request:
 
 jobs:
-  verify-audit-infra:
+  audit:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Verify Supabase connectivity
+        env:
+          PGURL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          echo "Checking connectivity to Supabase..."
+          if ! psql "$PGURL" -c '\q'; then
+            echo "❌ Failed to connect to Supabase database. Check network or credentials."
+            exit 1
+          fi
+          echo "✅ Connectivity check passed."
+
       - name: Run audit verification
         env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PGURL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
           set -euo pipefail
           echo "Running audit verification checks..."
-          PGURL="${SUPABASE_DB_URL}"
           psql "$PGURL" -v ON_ERROR_STOP=1 -q -f db/audit_infra/09_continuous_verification.sql | tee verification.out
 
           if grep -qE '\bf\b' verification.out; then
