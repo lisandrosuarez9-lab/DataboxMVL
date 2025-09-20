@@ -1,0 +1,175 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS Variables for Design Tokens */
+:root {
+  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --brand-primary: #1e3c72;
+  --brand-secondary: #2a5298;
+  --brand-accent: #10b981;
+  
+  /* Animation Variables */
+  --transition-fast: 150ms ease-in-out;
+  --transition-medium: 300ms ease-in-out;
+  --transition-slow: 500ms ease-in-out;
+  
+  /* Shadow Variables */
+  --shadow-soft: 0 2px 15px 0 rgba(0, 0, 0, 0.1);
+  --shadow-medium: 0 4px 25px 0 rgba(0, 0, 0, 0.15);
+  --shadow-strong: 0 10px 40px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Dark mode variables */
+[data-theme="dark"] {
+  --brand-primary: #3b82f6;
+  --brand-secondary: #1e40af;
+  --shadow-soft: 0 2px 15px 0 rgba(0, 0, 0, 0.3);
+  --shadow-medium: 0 4px 25px 0 rgba(0, 0, 0, 0.4);
+  --shadow-strong: 0 10px 40px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Base Styles */
+@layer base {
+  html {
+    font-family: var(--font-inter);
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply antialiased bg-gradient-to-br from-brand-primary to-brand-secondary min-h-screen;
+  }
+  
+  /* Focus styles for accessibility */
+  *:focus {
+    @apply outline-none ring-2 ring-brand-accent ring-opacity-50;
+  }
+  
+  /* Improve text rendering */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+/* Component Styles */
+@layer components {
+  /* Button variants */
+  .btn-primary {
+    @apply bg-brand-primary hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-brand-accent focus:ring-opacity-50;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-4 py-2 rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50;
+  }
+  
+  .btn-accent {
+    @apply bg-brand-accent hover:bg-green-600 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-green-400 focus:ring-opacity-50;
+  }
+  
+  /* Card styles */
+  .card {
+    @apply bg-white rounded-xl shadow-soft p-6 transition-shadow duration-200 hover:shadow-medium;
+  }
+  
+  .card-compact {
+    @apply bg-white rounded-lg shadow-soft p-4;
+  }
+  
+  /* Form styles */
+  .form-input {
+    @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-accent focus:border-brand-accent;
+  }
+  
+  .form-label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+  
+  /* Navigation styles */
+  .nav-link {
+    @apply text-gray-600 hover:text-brand-primary font-medium transition-colors duration-200;
+  }
+  
+  .nav-link-active {
+    @apply text-brand-primary font-semibold;
+  }
+  
+  /* Loading states */
+  .loading-spinner {
+    @apply animate-spin rounded-full h-6 w-6 border-b-2 border-brand-primary;
+  }
+  
+  /* Skeleton loading */
+  .skeleton {
+    @apply animate-pulse bg-gray-200 rounded;
+  }
+}
+
+/* Utility classes */
+@layer utilities {
+  /* Custom animations */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+  
+  /* Responsive text */
+  .text-responsive {
+    @apply text-sm sm:text-base lg:text-lg;
+  }
+  
+  /* Glassmorphism effect */
+  .glass {
+    @apply bg-white bg-opacity-90 backdrop-blur-sm;
+  }
+  
+  /* Print styles */
+  @media print {
+    .no-print {
+      @apply hidden;
+    }
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .card {
+    @apply border-2 border-gray-800;
+  }
+  
+  .btn-primary {
+    @apply border-2 border-white;
+  }
+}
