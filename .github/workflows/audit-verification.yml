@@ -10,7 +10,8 @@ jobs:
   verify-audit-infra:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Run audit verification
         env:
@@ -19,7 +20,7 @@ jobs:
           set -euo pipefail
           echo "Running audit verification checks..."
           PGURL="${SUPABASE_DB_URL}"
-psql "$PGURL" -v ON_ERROR_STOP=1 -q -f db/audit_infra/09_continuous_verification.sql | tee verification.out
+          psql "$PGURL" -v ON_ERROR_STOP=1 -q -f db/audit_infra/09_continuous_verification.sql | tee verification.out
 
           if grep -qE '\bf\b' verification.out; then
             echo "❌ Audit verification failed"
