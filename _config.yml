@@ -1,0 +1,22 @@
+# GitHub Pages Configuration
+# This file ensures GitHub Pages renders the site correctly
+
+# Enable GitHub Pages for this repository
+# The site will be available at: https://lisandrosuarez9-lab.github.io/DataboxMVL/
+
+# Site metadata
+title: "DataboxMVL Sovereign Protocol Suite"
+description: "Identity-centric data injection with consent enforcement and comprehensive audit capabilities"
+
+# Build settings
+markdown: kramdown
+plugins:
+  - jekyll-feed
+
+# Exclude files from processing
+exclude:
+  - .git/
+  - .github/
+  - db/
+  - docs/
+  - README.md
