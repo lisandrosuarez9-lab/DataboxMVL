@@ -675,6 +675,45 @@
       padding: 0;
     }
 
+    /* Fix main content area background and visibility */
+    .main-content {
+      background: #f8fafc;
+      min-height: calc(100vh - 120px);
+      padding: 30px;
+      margin-bottom: 60px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Ensure dashboard content area is visible */
+    #dashboardContent {
+      background: #f8fafc !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      z-index: 2 !important;
+    }
+
+    /* Force KPI cards to be visible */
+    .kpi-row {
+      display: grid !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    .kpi-card {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      min-height: 120px !important;
+    }
+
+    /* Force dashboard grid to be visible */
+    .dashboard-content-grid {
+      display: grid !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
     /* Update dashboard layout for new structure */
     .dashboard-content-grid {
       display: grid;
@@ -1114,35 +1153,6 @@
         </div>
       </div>
     </div>
-  </div>
-  <!-- End Main Content -->
-
-  <!-- Login Page -->
-  <div id="loginContent" style="display: none;">
-    <div class="container">
-      <div class="header">
-        <h1>🔐 DataboxMVL Authentication</h1>
-        <div class="subtitle">Please select your role to continue</div>
-      </div>
-      
-      <div class="card" style="max-width: 500px; margin: 0 auto;">
-        <div class="card-title">
-          <span>👤</span>
-          Role Selection
-        </div>
-        
-        <div class="form-group">
-          <label>Select your role:</label>
-          <select id="roleSelect" class="form-control">
-            <option value="compliance">Compliance (Read-only)</option>
-            <option value="service_role">Service Role (Full Access)</option>
-          </select>
-        </div>
-        
-        <button onclick="login()" class="btn-primary">Login</button>
-      </div>
-    </div>
-  </div>
 
     <!-- Dashboard Content -->
     <div class="main-content" id="dashboardContent" style="display: none;">
@@ -1263,6 +1273,36 @@
         </div>
       </div>
     </div>
+  </div>
+  <!-- End Main Content -->
+
+  <!-- Login Page -->
+  <div id="loginContent" style="display: none;">
+    <div class="container">
+      <div class="header">
+        <h1>🔐 DataboxMVL Authentication</h1>
+        <div class="subtitle">Please select your role to continue</div>
+      </div>
+      
+      <div class="card" style="max-width: 500px; margin: 0 auto;">
+        <div class="card-title">
+          <span>👤</span>
+          Role Selection
+        </div>
+        
+        <div class="form-group">
+          <label>Select your role:</label>
+          <select id="roleSelect" class="form-control">
+            <option value="compliance">Compliance (Read-only)</option>
+            <option value="service_role">Service Role (Full Access)</option>
+          </select>
+        </div>
+        
+        <button onclick="login()" class="btn-primary">Login</button>
+      </div>
+    </div>
+  </div>
+
   </div>
 
   <!-- Footer -->
