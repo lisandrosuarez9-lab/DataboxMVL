@@ -216,45 +216,26 @@ const DashboardPage: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-sm font-medium text-gray-700">Total Personas</h3>
-          <div className="mt-2 flex items-baseline">
-            <span className="text-3xl font-bold text-blue-600">
-              {metrics?.totalPersonas || 0}
-            </span>
-            {metrics?.growthRate && (
-              <span className="ml-2 text-sm text-green-600">
-                +{metrics.growthRate}%
-              </span>
-            )}
-          </div>
-        </div>
+        <TotalPersonasKPI
+          totalPersonas={metrics?.totalPersonas || 0}
+          loading={loading}
+          growthRate={metrics?.growthRate}
+          onViewDetails={() => console.log('View persona details')}
+        />
         
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-sm font-medium text-gray-700">Flagged Personas</h3>
-          <div className="mt-2 flex items-baseline">
-            <span className="text-3xl font-bold text-amber-600">
-              {metrics?.reviewNeeded || 0}
-            </span>
-            <span className="ml-2 text-sm text-gray-500">
-              ({metrics && metrics.totalPersonas > 0 ? ((metrics.reviewNeeded / metrics.totalPersonas) * 100).toFixed(1) : 0}%)
-            </span>
-          </div>
-        </div>
+        <FlaggedPersonasKPI
+          reviewNeeded={metrics?.reviewNeeded || 0}
+          totalPersonas={metrics?.totalPersonas || 0}
+          loading={loading}
+          onViewFlagged={() => console.log('View flagged personas')}
+        />
         
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-sm font-medium text-gray-700">Audit Activity</h3>
-          <div className="mt-2 flex items-baseline">
-            <span className="text-3xl font-bold text-green-600">
-              {metrics?.auditEntries || 0}
-            </span>
-            {metrics?.dailyAverageActivity && (
-              <span className="ml-2 text-sm text-gray-500">
-                ~{Math.round(metrics.dailyAverageActivity)}/day
-              </span>
-            )}
-          </div>
-        </div>
+        <AuditActivityKPI
+          auditEntries={metrics?.auditEntries || 0}
+          loading={loading}
+          dailyAverage={metrics?.dailyAverageActivity}
+          onViewAudit={() => console.log('View audit log')}
+        />
       </div>
 
       {/* Database Overview */}
