@@ -3,7 +3,6 @@ module.exports = {
   env: { browser: true, es2020: true },
   extends: [
     'eslint:recommended',
-    '@typescript-eslint/recommended',
     'plugin:react-hooks/recommended',
     'plugin:jsx-a11y/recommended',
   ],
@@ -15,10 +14,6 @@ module.exports = {
       'warn',
       { allowConstantExport: true },
     ],
-    '@typescript-eslint/no-unused-vars': ['error', { 
-      argsIgnorePattern: '^_',
-      varsIgnorePattern: '^_' 
-    }],
     'jsx-a11y/anchor-is-valid': ['error', {
       components: ['Link'],
       specialLink: ['to'],

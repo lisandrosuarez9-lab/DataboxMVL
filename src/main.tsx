@@ -1,6 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { infrastructureMonitor } from '@/utils/monitoring';
+
+// Initialize infrastructure monitoring
+infrastructureMonitor.initialize();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
