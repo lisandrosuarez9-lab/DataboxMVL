@@ -9,14 +9,21 @@ const Card: React.FC<CardProps> = ({
   actions,
   compact = false,
   className,
+  onClick,
   ...props
 }) => {
   const baseClasses = compact 
     ? 'bg-white rounded-lg shadow-soft p-4 transition-shadow duration-200 hover:shadow-medium'
     : 'bg-white rounded-xl shadow-soft p-6 transition-shadow duration-200 hover:shadow-medium';
 
+  const cardClasses = clsx(
+    baseClasses,
+    onClick && 'cursor-pointer hover:shadow-lg',
+    className
+  );
+
   return (
-    <div className={clsx(baseClasses, className)} {...props}>
+    <div className={cardClasses} onClick={onClick} {...props}>
       {(title || subtitle || actions) && (
         <div className="flex items-start justify-between mb-4">
           <div>
