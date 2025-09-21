@@ -1,9 +1,36 @@
+import React from 'react';
+
 // Core types for the application
 export interface User {
   id: string;
   email: string;
   role: 'compliance' | 'service_role';
   permissions: string[];
+}
+
+// Enhanced Persona type with all required fields per specifications
+export interface Persona {
+  id: string; // UUID with copy-to-clipboard functionality
+  user_id_review_needed: boolean; // Boolean with visual indicator (red/green)
+  is_test: boolean; // Boolean with visual badge (blue "TEST" for true)
+  created_at: string; // ISO8601 timestamp with localized display
+  updated_at: string; // ISO8601 timestamp with relative time display
+  risk_score: number; // Numeric with color-coded threshold indicators
+  trust_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'VERIFIED'; // Enumeration with corresponding icon set
+  verification_status: 'PENDING' | 'IN_PROGRESS' | 'VERIFIED' | 'REJECTED'; // State machine visualization
+  // Additional operational attributes
+  email?: string;
+  phone?: string;
+  document_id?: string;
+  full_name?: string;
+  birth_date?: string;
+  address?: string;
+  employment_status?: string;
+  income_level?: number;
+  credit_score?: number;
+  last_activity?: string;
+  created_by: string;
+  updated_by?: string;
 }
 
 export interface PersonaFlag {
@@ -16,14 +43,19 @@ export interface PersonaFlag {
   created_by: string;
 }
 
+// Enhanced Audit Entry type for comprehensive audit log visualization
 export interface AuditEntry {
   audit_id: string;
-  persona_id: string;
-  old_value: string | null;
-  new_value: string;
-  changed_at: string;
-  changed_by: string;
+  persona_id: string; // UUID with hyperlink to persona detail view
+  field_name: string; // String with human-readable field name mapping
+  old_value: string | null; // Formatted based on field type with diff visualization
+  new_value: string; // Formatted based on field type with diff visualization
+  changed_by: string; // String with user profile tooltip on hover
+  changed_at: string; // ISO8601 timestamp with absolute and relative display
+  change_reason?: string; // String with category tag and full text on expansion
+  client_metadata?: Record<string, any>; // JSON object with expandable inspector view
   action_type: 'INSERT' | 'UPDATE' | 'DELETE';
+  change_magnitude?: 'MINOR' | 'MAJOR' | 'CRITICAL'; // For color-coded categorization
 }
 
 export interface ProtocolData {
@@ -43,12 +75,19 @@ export interface DashboardMetrics {
   reviewNeeded: number;
   auditEntries: number;
   lastUpdated: string;
+  // Enhanced KPI metrics
+  growthRate?: number; // 7-day growth rate
+  flaggedPercentage?: number; // Percentage of flagged personas
+  dailyAverageActivity?: number; // Daily average audit activity
+  unusualActivityDetected?: boolean; // Alert for unusual patterns
 }
 
 export interface ChartDataPoint {
   label: string;
   value: number;
   date?: string;
+  category?: string; // For segmented data
+  metadata?: Record<string, any>; // Additional context
 }
 
 export interface ChartProps {
@@ -57,6 +96,70 @@ export interface ChartProps {
   className?: string;
   height?: number;
   loading?: boolean;
+  interactive?: boolean; // Enable hover/click interactions
+  showTrends?: boolean; // Show trend lines
+  colorScheme?: 'default' | 'semantic' | 'risk'; // Color palette
+}
+
+// Table functionality types
+export interface TableColumn<T> {
+  id: keyof T;
+  label: string;
+  sortable?: boolean;
+  filterable?: boolean;
+  resizable?: boolean;
+  width?: number;
+  minWidth?: number;
+  render?: (value: any, row: T) => React.ReactNode;
+  filterType?: 'text' | 'select' | 'date' | 'number' | 'boolean' | 'range';
+  filterOptions?: Array<{ value: any; label: string }>;
+}
+
+export interface TableFilter {
+  field: string;
+  operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'contains' | 'startsWith' | 'endsWith' | 'in' | 'between';
+  value: any;
+  type: 'text' | 'number' | 'date' | 'boolean' | 'select';
+}
+
+export interface TableSort {
+  field: string;
+  direction: 'asc' | 'desc';
+  priority?: number; // For multi-column sorting
+}
+
+export interface TableState {
+  page: number;
+  pageSize: 10 | 25 | 50 | 100;
+  filters: TableFilter[];
+  sorts: TableSort[];
+  selectedRows: string[];
+  visibleColumns: string[];
+  searchTerm?: string;
+}
+
+export interface VirtualizedTableProps<T> {
+  data: T[];
+  columns: TableColumn<T>[];
+  loading?: boolean;
+  error?: string;
+  emptyMessage?: string;
+  onStateChange?: (state: TableState) => void;
+  onRowClick?: (row: T) => void;
+  onRowSelect?: (selectedIds: string[]) => void;
+  onExport?: (format: 'csv' | 'excel', selectedRows?: T[]) => void;
+  bulkActions?: Array<{
+    id: string;
+    label: string;
+    icon?: string;
+    action: (selectedRows: T[]) => void;
+    disabled?: (selectedRows: T[]) => boolean;
+  }>;
+  enableInlineEdit?: boolean;
+  enableKeyboardNavigation?: boolean;
+  enableRowExpansion?: boolean;
+  rowHeight?: number;
+  overscan?: number;
 }
 
 // Form types
@@ -96,6 +199,7 @@ export interface AppState {
 
 export interface DashboardState {
   metrics: DashboardMetrics | null;
+  personas: Persona[];
   personaFlags: PersonaFlag[];
   auditEntries: AuditEntry[];
   loading: boolean;
@@ -105,10 +209,10 @@ export interface DashboardState {
 export interface UIState {
   theme: 'light' | 'dark';
   sidebarCollapsed: boolean;
-  notifications: Notification[];
+  notifications: AppNotification[];
 }
 
-export interface Notification {
+export interface AppNotification {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';
   title: string;
@@ -137,6 +241,7 @@ export interface CardProps extends BaseComponentProps {
   subtitle?: string;
   actions?: React.ReactNode;
   compact?: boolean;
+  onClick?: () => void;
 }
 
 export interface ModalProps extends BaseComponentProps {
@@ -181,6 +286,4 @@ export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
 
-export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
-
-export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+export type Optional<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>> & Partial<Pick<T, K>>;

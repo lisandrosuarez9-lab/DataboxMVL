@@ -6,13 +6,19 @@ import {
   fetchDashboardDataSuccess,
   updateMetrics 
 } from '@/stores/slices/dashboardSlice';
-import { MetricsCard, PersonaFlagsTable, AuditLogTable } from '@/components/dashboard';
+import { 
+  TotalPersonasKPI, 
+  FlaggedPersonasKPI, 
+  AuditActivityKPI,
+  PersonaTable,
+  EnhancedAuditLogTable 
+} from '@/components/dashboard';
 import { Card } from '@/components/ui';
-import { DashboardMetrics, PersonaFlag, AuditEntry } from '@/types';
+import { DashboardMetrics, PersonaFlag, AuditEntry, Persona } from '@/types';
 
 const DashboardPage: React.FC = () => {
   const dispatch = useDispatch();
-  const { metrics, personaFlags, auditEntries, loading } = useSelector(
+  const { metrics, personas, auditEntries, loading } = useSelector(
     (state: RootState) => state.dashboard
   );
   const { currentUser } = useSelector((state: RootState) => state.user);
@@ -29,7 +35,69 @@ const DashboardPage: React.FC = () => {
           reviewNeeded: 23,
           auditEntries: 5681,
           lastUpdated: new Date().toISOString(),
+          growthRate: 5.2,
+          flaggedPercentage: 1.8,
+          dailyAverageActivity: 142,
+          unusualActivityDetected: false
         };
+
+        const mockPersonas: Persona[] = [
+          {
+            id: 'persona-001',
+            user_id_review_needed: true,
+            is_test: false,
+            created_at: new Date(Date.now() - 86400000).toISOString(),
+            updated_at: new Date(Date.now() - 3600000).toISOString(),
+            risk_score: 75,
+            trust_level: 'MEDIUM',
+            verification_status: 'PENDING',
+            full_name: 'Maria Rodriguez Silva',
+            email: 'maria.rodriguez@email.com',
+            phone: '+1234567890',
+            document_id: 'ID123456789',
+            employment_status: 'Employed',
+            income_level: 45000,
+            credit_score: 680,
+            created_by: 'system',
+            updated_by: 'compliance'
+          },
+          {
+            id: 'persona-002',
+            user_id_review_needed: false,
+            is_test: true,
+            created_at: new Date(Date.now() - 172800000).toISOString(),
+            updated_at: new Date(Date.now() - 7200000).toISOString(),
+            risk_score: 25,
+            trust_level: 'HIGH',
+            verification_status: 'VERIFIED',
+            full_name: 'Test User Account',
+            email: 'test@databox.mvl',
+            employment_status: 'Test',
+            income_level: 50000,
+            credit_score: 750,
+            created_by: 'system',
+            updated_by: 'service_role'
+          },
+          {
+            id: 'persona-003',
+            user_id_review_needed: true,
+            is_test: false,
+            created_at: new Date(Date.now() - 259200000).toISOString(),
+            updated_at: new Date(Date.now() - 1800000).toISOString(),
+            risk_score: 90,
+            trust_level: 'LOW',
+            verification_status: 'REJECTED',
+            full_name: 'Carlos Mendoza Lopez',
+            email: 'carlos.mendoza@email.com',
+            phone: '+0987654321',
+            document_id: 'ID987654321',
+            employment_status: 'Unemployed',
+            income_level: 15000,
+            credit_score: 450,
+            created_by: 'system',
+            updated_by: 'compliance'
+          }
+        ];
 
         const mockPersonaFlags: PersonaFlag[] = [
           {
@@ -65,6 +133,7 @@ const DashboardPage: React.FC = () => {
           {
             audit_id: 'AUDIT_001',
             persona_id: 'PERSONA_001',
+            field_name: 'verification_status',
             old_value: 'PENDING_REVIEW',
             new_value: 'REQUIRES_MANUAL_REVIEW',
             changed_at: new Date(Date.now() - 1800000).toISOString(),
@@ -74,6 +143,7 @@ const DashboardPage: React.FC = () => {
           {
             audit_id: 'AUDIT_002',
             persona_id: 'PERSONA_004',
+            field_name: 'flag_type',
             old_value: null,
             new_value: 'INITIAL_SETUP',
             changed_at: new Date(Date.now() - 3600000).toISOString(),
@@ -83,6 +153,7 @@ const DashboardPage: React.FC = () => {
           {
             audit_id: 'AUDIT_003',
             persona_id: 'PERSONA_002',
+            field_name: 'flag_value',
             old_value: 'PENDING_VERIFICATION',
             new_value: 'PENDING_DOCUMENTS',
             changed_at: new Date(Date.now() - 7200000).toISOString(),
@@ -93,6 +164,7 @@ const DashboardPage: React.FC = () => {
 
         dispatch(fetchDashboardDataSuccess({
           metrics: mockMetrics,
+          personas: mockPersonas,
           personaFlags: mockPersonaFlags,
           auditEntries: mockAuditEntries,
         }));
@@ -142,8 +214,27 @@ const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Metrics Cards */}
-      <MetricsCard metrics={metrics} loading={loading} />
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <TotalPersonasKPI
+          totalPersonas={metrics?.totalPersonas || 0}
+          loading={loading}
+          growthRate={metrics?.growthRate}
+          onViewDetails={() => console.log('View personas')}
+        />
+        <FlaggedPersonasKPI
+          reviewNeeded={metrics?.reviewNeeded || 0}
+          totalPersonas={metrics?.totalPersonas || 0}
+          loading={loading}
+          onViewFlagged={() => console.log('View flagged personas')}
+        />
+        <AuditActivityKPI
+          auditEntries={metrics?.auditEntries || 0}
+          loading={loading}
+          dailyAverage={metrics?.dailyAverageActivity}
+          onViewAudit={() => console.log('View audit log')}
+        />
+      </div>
 
       {/* Database Overview */}
       <Card title="📊 Database Schema Overview" className="bg-white/95 backdrop-blur-sm">
@@ -177,10 +268,29 @@ const DashboardPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Data Tables */}
-      <div className="grid lg:grid-cols-2 gap-8">
-        <PersonaFlagsTable flags={personaFlags} loading={loading} />
-        <AuditLogTable entries={auditEntries} loading={loading} />
+      {/* Enhanced Data Tables */}
+      <div className="space-y-8">
+        {/* Main Persona Table */}
+        <Card title="🧑‍💼 Persona Management" subtitle="Comprehensive persona data with advanced filtering and sorting">
+          <PersonaTable
+            personas={personas}
+            loading={loading}
+            onPersonaClick={(persona) => console.log('View persona:', persona.id)}
+            onPersonaSelect={(selectedIds) => console.log('Selected personas:', selectedIds)}
+            onExport={(format, selectedRows) => console.log('Export:', format, selectedRows?.length)}
+            enableInlineEdit={currentUser?.role === 'service_role'}
+          />
+        </Card>
+
+        {/* Enhanced Audit Log */}
+        <Card title="📋 Audit Trail" subtitle="Detailed audit log with change visualization and temporal grouping">
+          <EnhancedAuditLogTable
+            entries={auditEntries}
+            loading={loading}
+            onEntryClick={(entry) => console.log('View audit entry:', entry.audit_id)}
+            onExport={(format, selectedRows) => console.log('Export audit:', format, selectedRows?.length)}
+          />
+        </Card>
       </div>
 
       {/* Connection Status */}
