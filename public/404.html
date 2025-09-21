@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>DataboxMVL Sovereign Protocol Suite</title>
+  <script>
+    // Single-page app routing support for GitHub Pages
+    const pathSegmentsToKeep = 1;
+    const location = window.location;
+    const repo = '/DataboxMVL';
+    
+    // Store the path for reconstruction after redirect
+    sessionStorage.setItem('redirect', 
+      location.pathname.slice(repo.length) + location.search
+    );
+    
+    // Redirect to the index page
+    const redirectTo = location.origin + repo + location.search;
+    location.replace(redirectTo);
+  </script>
+</head>
+<body>
+  <p>Redirecting to DataboxMVL application...</p>
+</body>
+</html>
