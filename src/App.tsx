@@ -14,7 +14,7 @@ const App: React.FC = () => {
   return (
     <Provider store={store}>
       <ErrorBoundary>
-        <Router>
+        <Router basename="/DataboxMVL">
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
