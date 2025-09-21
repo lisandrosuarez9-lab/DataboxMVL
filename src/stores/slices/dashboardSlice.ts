@@ -1,8 +1,9 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { DashboardMetrics, PersonaFlag, AuditEntry } from '@/types';
+import { DashboardMetrics, PersonaFlag, AuditEntry, Persona } from '@/types';
 
 interface DashboardState {
   metrics: DashboardMetrics | null;
+  personas: Persona[];
   personaFlags: PersonaFlag[];
   auditEntries: AuditEntry[];
   loading: boolean;
@@ -12,6 +13,7 @@ interface DashboardState {
 
 const initialState: DashboardState = {
   metrics: null,
+  personas: [],
   personaFlags: [],
   auditEntries: [],
   loading: false,
@@ -29,11 +31,13 @@ const dashboardSlice = createSlice({
     },
     fetchDashboardDataSuccess: (state, action: PayloadAction<{
       metrics: DashboardMetrics;
+      personas: Persona[];
       personaFlags: PersonaFlag[];
       auditEntries: AuditEntry[];
     }>) => {
       state.loading = false;
       state.metrics = action.payload.metrics;
+      state.personas = action.payload.personas;
       state.personaFlags = action.payload.personaFlags;
       state.auditEntries = action.payload.auditEntries;
       state.lastUpdated = new Date().toISOString();

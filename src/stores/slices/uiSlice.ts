@@ -1,10 +1,10 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Notification } from '@/types';
+import { AppNotification } from '@/types';
 
 interface UIState {
   theme: 'light' | 'dark';
   sidebarCollapsed: boolean;
-  notifications: Notification[];
+  notifications: AppNotification[];
   loading: {
     [key: string]: boolean;
   };
@@ -33,8 +33,8 @@ const uiSlice = createSlice({
     setSidebarCollapsed: (state, action: PayloadAction<boolean>) => {
       state.sidebarCollapsed = action.payload;
     },
-    addNotification: (state, action: PayloadAction<Omit<Notification, 'id' | 'timestamp' | 'read'>>) => {
-      const notification: Notification = {
+    addNotification: (state, action: PayloadAction<Omit<AppNotification, 'id' | 'timestamp' | 'read'>>) => {
+      const notification: AppNotification = {
         ...action.payload,
         id: Date.now().toString(),
         timestamp: new Date().toISOString(),
@@ -43,13 +43,13 @@ const uiSlice = createSlice({
       state.notifications.unshift(notification);
     },
     markNotificationAsRead: (state, action: PayloadAction<string>) => {
-      const notification = state.notifications.find(n => n.id === action.payload);
+      const notification = state.notifications.find((n: AppNotification) => n.id === action.payload);
       if (notification) {
         notification.read = true;
       }
     },
     removeNotification: (state, action: PayloadAction<string>) => {
-      state.notifications = state.notifications.filter(n => n.id !== action.payload);
+      state.notifications = state.notifications.filter((n: AppNotification) => n.id !== action.payload);
     },
     clearAllNotifications: (state) => {
       state.notifications = [];
