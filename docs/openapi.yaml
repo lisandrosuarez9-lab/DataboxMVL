@@ -1,0 +1,693 @@
+openapi: 3.0.0
+info:
+  title: FactorA Credit Scoring API
+  version: 1.0.0
+  description: Regulator-ready API for deterministic credit scoring and scenario simulation
+  contact:
+    name: DataboxMVL Support
+    email: support@databoxmvl.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []
+
+servers:
+  - url: https://your-project.supabase.co/functions/v1/api-v1
+    description: Production server
+  - url: http://localhost:54321/functions/v1/api-v1
+    description: Local development server
+
+paths:
+  /credit-score/compute:
+    post:
+      summary: Compute and persist credit score
+      description: Extracts features, applies model weights, and persists complete credit score with audit trail
+      operationId: computeCreditScore
+      tags:
+        - Credit Scoring
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditScoreRequest'
+            example:
+              persona_id: "22222222-2222-2222-2222-222222222222"
+              model_id: "11111111-1111-1111-1111-111111111111"
+      responses:
+        '200':
+          description: Credit score computed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditScoreResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /credit-score/simulate:
+    post:
+      summary: Simulate credit score with feature overrides
+      description: Simulates credit score computation with modified features without persisting results
+      operationId: simulateCreditScore
+      tags:
+        - Credit Scoring
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScoreSimulationRequest'
+            example:
+              persona_id: "22222222-2222-2222-2222-222222222222"
+              model_id: "11111111-1111-1111-1111-111111111111"
+              feature_overrides:
+                tx_6m_count: 25
+                bills_paid_ratio: 0.95
+      responses:
+        '200':
+          description: Credit score simulation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /credit-score/trend:
+    get:
+      summary: Get historical score trends
+      description: Retrieves aggregated score trends over specified time period
+      operationId: getScoreTrend
+      tags:
+        - Credit History
+      parameters:
+        - name: persona_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Persona identifier
+          example: "22222222-2222-2222-2222-222222222222"
+        - name: model_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Scoring model identifier
+          example: "11111111-1111-1111-1111-111111111111"
+        - name: months
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 60
+            default: 12
+          description: Number of months to retrieve
+      responses:
+        '200':
+          description: Score trend data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScoreTrendResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /credit-score/history:
+    get:
+      summary: Get credit score history
+      description: Retrieves detailed credit score computation history for a persona
+      operationId: getScoreHistory
+      tags:
+        - Credit History
+      parameters:
+        - name: persona_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Persona identifier
+          example: "22222222-2222-2222-2222-222222222222"
+        - name: model_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Optional scoring model filter
+          example: "11111111-1111-1111-1111-111111111111"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Maximum number of records to return
+      responses:
+        '200':
+          description: Credit score history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScoreHistoryResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /models/factors:
+    get:
+      summary: Get scoring model factors
+      description: Retrieves all scoring factors and their weights for a specific model
+      operationId: getModelFactors
+      tags:
+        - Model Configuration
+      parameters:
+        - name: model_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Scoring model identifier
+          example: "11111111-1111-1111-1111-111111111111"
+      responses:
+        '200':
+          description: Model factors retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelFactorsResponse'
+        '400':
+          description: Invalid model_id parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /models/risk-bands:
+    get:
+      summary: Get risk band definitions
+      description: Retrieves risk band definitions and score ranges for a specific model
+      operationId: getRiskBands
+      tags:
+        - Model Configuration
+      parameters:
+        - name: model_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Scoring model identifier
+          example: "11111111-1111-1111-1111-111111111111"
+      responses:
+        '200':
+          description: Risk bands retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskBandsResponse'
+        '400':
+          description: Invalid model_id parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: apikey
+      description: Supabase API key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase JWT token
+
+  schemas:
+    CreditScoreRequest:
+      type: object
+      required:
+        - persona_id
+        - model_id
+      properties:
+        persona_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the persona
+          example: "22222222-2222-2222-2222-222222222222"
+        model_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the scoring model
+          example: "11111111-1111-1111-1111-111111111111"
+
+    ScoreSimulationRequest:
+      allOf:
+        - $ref: '#/components/schemas/CreditScoreRequest'
+        - type: object
+          properties:
+            feature_overrides:
+              type: object
+              description: Feature values to override for simulation
+              additionalProperties:
+                oneOf:
+                  - type: number
+                  - type: boolean
+              example:
+                tx_6m_count: 25
+                bills_paid_ratio: 0.95
+                micro_active: true
+
+    CreditScoreResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CreditScoreData'
+        computed_at:
+          type: string
+          format: date-time
+          description: ISO timestamp of computation
+
+    SimulationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/SimulationData'
+        simulated_at:
+          type: string
+          format: date-time
+          description: ISO timestamp of simulation
+
+    CreditScoreData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for this score computation
+        persona_id:
+          type: string
+          format: uuid
+          description: Persona identifier
+        model_id:
+          type: string
+          format: uuid
+          description: Scoring model identifier
+        raw_score:
+          type: number
+          description: Raw computed score before normalization
+        normalized_score:
+          type: integer
+          minimum: 0
+          maximum: 1000
+          description: Normalized score on 0-1000 scale
+        features:
+          type: object
+          description: Extracted features used in computation
+          additionalProperties: true
+        weighted_contributions:
+          type: object
+          description: Individual factor contributions to final score
+          additionalProperties: true
+        risk_band:
+          $ref: '#/components/schemas/RiskBandInfo'
+        computation_metadata:
+          type: object
+          properties:
+            computed_at:
+              type: string
+              format: date-time
+            feature_count:
+              type: integer
+            factors_applied:
+              type: integer
+        audit_log_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Reference to audit log entry
+
+    SimulationData:
+      type: object
+      properties:
+        simulation_id:
+          type: string
+          format: uuid
+          description: Unique identifier for this simulation
+        persona_id:
+          type: string
+          format: uuid
+        model_id:
+          type: string
+          format: uuid
+        simulation_timestamp:
+          type: string
+          format: date-time
+        original:
+          type: object
+          description: Original score computation without overrides
+          properties:
+            features:
+              type: object
+            normalized_score:
+              type: integer
+            risk_band:
+              $ref: '#/components/schemas/RiskBandInfo'
+        simulated:
+          type: object
+          description: Simulated score computation with overrides
+          properties:
+            features:
+              type: object
+            normalized_score:
+              type: integer
+            risk_band:
+              $ref: '#/components/schemas/RiskBandInfo'
+        feature_overrides:
+          type: object
+          description: Applied feature overrides
+        impact_analysis:
+          type: object
+          properties:
+            score_change:
+              type: integer
+              description: Difference between simulated and original score
+            band_change:
+              type: object
+              properties:
+                from:
+                  type: string
+                to:
+                  type: string
+            risk_level_change:
+              type: string
+              enum: [NO_CHANGE, IMPROVED, DEGRADED]
+        simulation_metadata:
+          type: object
+          properties:
+            is_simulation:
+              type: boolean
+              example: true
+            persisted:
+              type: boolean
+              example: false
+
+    RiskBandInfo:
+      type: object
+      properties:
+        band:
+          type: string
+          enum: [A, B, C, D, UNCLASSIFIED]
+          description: Risk band classification
+        min_score:
+          type: integer
+          minimum: 0
+          maximum: 1000
+          nullable: true
+        max_score:
+          type: integer
+          minimum: 0
+          maximum: 1000
+          nullable: true
+        recommendation:
+          type: string
+          description: Risk-appropriate product recommendation
+        score:
+          type: integer
+          description: The score that was classified
+
+    ScoreTrendResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              month:
+                type: string
+                format: date
+                description: Month of the aggregated data
+              avg_score:
+                type: number
+                description: Average score for the month
+              score_count:
+                type: integer
+                description: Number of scores computed in that month
+        query_params:
+          type: object
+          properties:
+            persona_id:
+              type: string
+              format: uuid
+            model_id:
+              type: string
+              format: uuid
+            months:
+              type: integer
+
+    ScoreHistoryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreditScoreData'
+        count:
+          type: integer
+          description: Number of records returned
+        query_params:
+          type: object
+          properties:
+            persona_id:
+              type: string
+              format: uuid
+            model_id:
+              type: string
+              format: uuid
+              nullable: true
+            limit:
+              type: integer
+
+    ModelFactorsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScoreFactor'
+        count:
+          type: integer
+          description: Number of factors returned
+        model_id:
+          type: string
+          format: uuid
+
+    RiskBandsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskBand'
+        count:
+          type: integer
+          description: Number of risk bands returned
+        model_id:
+          type: string
+          format: uuid
+
+    ScoreFactor:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        model_id:
+          type: string
+          format: uuid
+        factor_key:
+          type: string
+          description: Feature identifier
+          example: "tx_6m_count"
+        weight:
+          type: number
+          description: Weight applied to this feature
+          example: 0.05
+        description:
+          type: string
+          description: Human-readable description of the factor
+          example: "Transaction frequency in last 6 months"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    RiskBand:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        model_id:
+          type: string
+          format: uuid
+        band:
+          type: string
+          enum: [A, B, C, D]
+          description: Risk band identifier
+        min_score:
+          type: integer
+          minimum: 0
+          maximum: 1000
+          description: Minimum score for this band (inclusive)
+        max_score:
+          type: integer
+          minimum: 0
+          maximum: 1000
+          description: Maximum score for this band (inclusive)
+        recommendation:
+          type: string
+          description: Risk-appropriate product recommendation
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type or category
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: string
+          description: Additional error details
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+          nullable: true
+        required_fields:
+          type: array
+          items:
+            type: string
+          nullable: true
+        allowed_methods:
+          type: array
+          items:
+            type: string
+          nullable: true
+
+tags:
+  - name: Credit Scoring
+    description: Core credit scoring operations - computation and simulation
+  - name: Credit History
+    description: Historical credit score data and trends
+  - name: Model Configuration
+    description: Scoring model configuration and metadata
+
+externalDocs:
+  description: Full API documentation and integration guide
+  url: https://docs.databoxmvl.com/credit-scoring
