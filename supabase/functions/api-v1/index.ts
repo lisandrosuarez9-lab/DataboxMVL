@@ -16,9 +16,7 @@ interface ScoreSimulationRequest extends CreditScoreRequest {
   feature_overrides?: Record<string, any>;
 }
 
-interface ScoreTrendRequest extends CreditScoreRequest {
-  months?: number;
-}
+// Removed unused interface - months parameter is handled via query params
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -29,7 +27,9 @@ serve(async (req) => {
   try {
     // Initialize Supabase client
     const supabaseClient = createClient(
+      // eslint-disable-next-line no-undef
       Deno.env.get('SUPABASE_URL') ?? '',
+      // eslint-disable-next-line no-undef
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
