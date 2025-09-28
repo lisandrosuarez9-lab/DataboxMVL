@@ -287,3 +287,84 @@ export type DeepPartial<T> = {
 };
 
 export type Optional<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>> & Partial<Pick<T, K>>;
+
+// Credit Scoring System Types
+export interface ScoreFactor {
+  id: string;
+  model_id: number;
+  feature_key: string;
+  weight: number;
+  description?: string;
+  created_at: string;
+}
+
+export interface RiskBand {
+  id: string;
+  model_id: number;
+  band: string;
+  min_score: number;
+  max_score: number;
+  recommendation: string;
+  created_at: string;
+}
+
+export interface CreditScore {
+  id: string;
+  persona_id: string;
+  model_id: number;
+  score: number;
+  explanation: CreditScoreExplanation;
+  computed_at: string;
+}
+
+export interface CreditScoreExplanation {
+  features: Record<string, any>;
+  weighted_result: {
+    raw_score: number;
+    contributions: Record<string, number>;
+  };
+  normalized_score: number;
+  risk_band?: {
+    band: string;
+    recommendation: string;
+  };
+  simulation?: boolean;
+}
+
+export interface ScoreTrendPoint {
+  month: string;
+  avg_score: number;
+}
+
+export interface CreditScoreRequest {
+  persona_id: string;
+  model_id: number;
+}
+
+export interface ScoreSimulationRequest extends CreditScoreRequest {
+  feature_overrides?: Record<string, any>;
+}
+
+export interface ScoreTrendRequest extends CreditScoreRequest {
+  months?: number;
+}
+
+export interface CreditScoreResponse {
+  success: boolean;
+  data: CreditScore | CreditScore[] | ScoreTrendPoint[];
+  error?: string;
+  details?: string;
+}
+
+// Credit scoring feature definitions for type safety
+export interface CreditScoringFeatures {
+  tx_6m_count: number;          // Number of transactions in last 6 months
+  tx_6m_avg_amount: number;     // Average transaction amount in last 6 months
+  tx_6m_sum: number;            // Sum of transactions in last 6 months
+  days_since_last_tx: number;   // Days since last transaction
+  remesa_12m_sum: number;       // Sum of remittances in last 12 months
+  bills_paid_ratio: number;     // Ratio of paid utility bills
+  avg_bill_amount: number;      // Average bill amount
+  micro_active: boolean;        // Has active microcredit
+  micro_active_sum: number;     // Sum of active microcredits
+}
