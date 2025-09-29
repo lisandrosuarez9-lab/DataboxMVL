@@ -1,0 +1,176 @@
+{
+  "summary": {
+    "total": 15,
+    "passed": 15,
+    "failed": 0,
+    "successRate": "100.0"
+  },
+  "timestamp": "2025-09-29T03:16:43.783Z",
+  "environment": {
+    "baseUrl": "https://lisandrosuarez9-lab.github.io/DataboxMVL",
+    "nodeVersion": "v20.19.5",
+    "platform": "linux"
+  },
+  "tests": [
+    {
+      "name": "File Check: API Client",
+      "passed": true,
+      "message": "File exists: src/utils/api.ts",
+      "timestamp": "2025-09-29T03:16:43.780Z",
+      "details": {
+        "path": "src/utils/api.ts",
+        "fullPath": "/home/runner/work/DataboxMVL/DataboxMVL/src/utils/api.ts"
+      }
+    },
+    {
+      "name": "File Check: Verification Checklist",
+      "passed": true,
+      "message": "File exists: src/utils/verificationChecklist.ts",
+      "timestamp": "2025-09-29T03:16:43.780Z",
+      "details": {
+        "path": "src/utils/verificationChecklist.ts",
+        "fullPath": "/home/runner/work/DataboxMVL/DataboxMVL/src/utils/verificationChecklist.ts"
+      }
+    },
+    {
+      "name": "File Check: Polling Configuration",
+      "passed": true,
+      "message": "File exists: src/utils/pollingConfig.ts",
+      "timestamp": "2025-09-29T03:16:43.780Z",
+      "details": {
+        "path": "src/utils/pollingConfig.ts",
+        "fullPath": "/home/runner/work/DataboxMVL/DataboxMVL/src/utils/pollingConfig.ts"
+      }
+    },
+    {
+      "name": "File Check: Connectivity Banner",
+      "passed": true,
+      "message": "File exists: src/components/ui/ConnectivityBanner.tsx",
+      "timestamp": "2025-09-29T03:16:43.781Z",
+      "details": {
+        "path": "src/components/ui/ConnectivityBanner.tsx",
+        "fullPath": "/home/runner/work/DataboxMVL/DataboxMVL/src/components/ui/ConnectivityBanner.tsx"
+      }
+    },
+    {
+      "name": "File Check: Role Banner",
+      "passed": true,
+      "message": "File exists: src/components/ui/RoleBanner.tsx",
+      "timestamp": "2025-09-29T03:16:43.781Z",
+      "details": {
+        "path": "src/components/ui/RoleBanner.tsx",
+        "fullPath": "/home/runner/work/DataboxMVL/DataboxMVL/src/components/ui/RoleBanner.tsx"
+      }
+    },
+    {
+      "name": "File Check: Simulation Panel",
+      "passed": true,
+      "message": "File exists: src/components/dashboard/SimulationPanel.tsx",
+      "timestamp": "2025-09-29T03:16:43.781Z",
+      "details": {
+        "path": "src/components/dashboard/SimulationPanel.tsx",
+        "fullPath": "/home/runner/work/DataboxMVL/DataboxMVL/src/components/dashboard/SimulationPanel.tsx"
+      }
+    },
+    {
+      "name": "File Check: Dashboard Page",
+      "passed": true,
+      "message": "File exists: src/pages/DashboardPage.tsx",
+      "timestamp": "2025-09-29T03:16:43.781Z",
+      "details": {
+        "path": "src/pages/DashboardPage.tsx",
+        "fullPath": "/home/runner/work/DataboxMVL/DataboxMVL/src/pages/DashboardPage.tsx"
+      }
+    },
+    {
+      "name": "File Check: API Hooks",
+      "passed": true,
+      "message": "File exists: src/hooks/useAPI.ts",
+      "timestamp": "2025-09-29T03:16:43.781Z",
+      "details": {
+        "path": "src/hooks/useAPI.ts",
+        "fullPath": "/home/runner/work/DataboxMVL/DataboxMVL/src/hooks/useAPI.ts"
+      }
+    },
+    {
+      "name": "File Check: Main HTML file",
+      "passed": true,
+      "message": "File exists: dist/index.html",
+      "timestamp": "2025-09-29T03:16:43.781Z",
+      "details": {
+        "path": "dist/index.html",
+        "fullPath": "/home/runner/work/DataboxMVL/DataboxMVL/dist/index.html"
+      }
+    },
+    {
+      "name": "File Check: Package configuration",
+      "passed": true,
+      "message": "File exists: package.json",
+      "timestamp": "2025-09-29T03:16:43.782Z",
+      "details": {
+        "path": "package.json",
+        "fullPath": "/home/runner/work/DataboxMVL/DataboxMVL/package.json"
+      }
+    },
+    {
+      "name": "File Check: Vite configuration",
+      "passed": true,
+      "message": "File exists: vite.config.ts",
+      "timestamp": "2025-09-29T03:16:43.782Z",
+      "details": {
+        "path": "vite.config.ts",
+        "fullPath": "/home/runner/work/DataboxMVL/DataboxMVL/vite.config.ts"
+      }
+    },
+    {
+      "name": "API Client Features",
+      "passed": true,
+      "message": "All required API methods implemented",
+      "timestamp": "2025-09-29T03:16:43.782Z",
+      "details": {
+        "missing": [],
+        "total": 10
+      }
+    },
+    {
+      "name": "Verification Tests",
+      "passed": true,
+      "message": "All required verification tests implemented",
+      "timestamp": "2025-09-29T03:16:43.782Z",
+      "details": {
+        "missing": [],
+        "total": 7
+      }
+    },
+    {
+      "name": "Package Scripts",
+      "passed": true,
+      "message": "All required npm scripts present",
+      "timestamp": "2025-09-29T03:16:43.783Z",
+      "details": {
+        "missing": [],
+        "available": [
+          "dev",
+          "build",
+          "preview",
+          "predeploy",
+          "deploy",
+          "test",
+          "test:watch",
+          "lint",
+          "lint:fix",
+          "typecheck"
+        ]
+      }
+    },
+    {
+      "name": "Security Compliance",
+      "passed": true,
+      "message": "No service_role key in frontend configuration (compliant)",
+      "timestamp": "2025-09-29T03:16:43.783Z",
+      "details": {
+        "serviceRoleKeyFound": false
+      }
+    }
+  ]
+}
