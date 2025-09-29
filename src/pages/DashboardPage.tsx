@@ -1,23 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { RootState } from '@/stores';
 import { 
   TotalPersonasKPI, 
   FlaggedPersonasKPI, 
   AuditActivityKPI,
   PersonaTable,
-  EnhancedAuditLogTable 
+  EnhancedAuditLogTable
 } from '@/components/dashboard';
-import { Card, Button } from '@/components/ui';
+import { Card, Button, ConnectivityBanner, RoleBanner } from '@/components/ui';
 import { useDashboardData, usePersonaExplanation } from '@/hooks/useAPI';
-import { apiHelpers } from '@/utils/api';
+import { apiHelpers, apiClient } from '@/utils/api';
+import { runFrontendSmokeTest } from '@/utils/verificationChecklist';
+import { POLLING_INTERVALS } from '@/utils/pollingConfig';
 
 const DashboardPage: React.FC = () => {
   const { currentUser } = useSelector((state: RootState) => state.user);
+  const navigate = useNavigate();
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
   const [showExplanationModal, setShowExplanationModal] = useState(false);
 
-  // Use the dashboard data hook with auto-refresh every 30 seconds
+  // Get current role from JWT (re-evaluated on every render)
+  const currentRole = apiClient.getCurrentUserRole();
+
+  // Redirect anonymous users to login
+  useEffect(() => {
+    if (apiClient.isAnonymous()) {
+      console.warn('Anonymous user detected, redirecting to login');
+      navigate('/login', { replace: true });
+      return;
+    }
+  }, [navigate]);
+
+  // Use the dashboard data hook with proper polling intervals per requirements
   const {
     personas,
     auditEntries,
@@ -29,7 +45,7 @@ const DashboardPage: React.FC = () => {
     refetchAll
   } = useDashboardData({
     autoRefresh: true,
-    refreshInterval: 30000
+    refreshInterval: POLLING_INTERVALS.KPIs // This will be overridden by specific intervals in the hook
   });
 
   // Hook for persona explanation
@@ -48,59 +64,26 @@ const DashboardPage: React.FC = () => {
     setSelectedPersonaId(null);
   };
 
-  // Role-based UI rendering
-  const renderRoleBanner = () => {
-    if (permissions.role === 'compliance') {
-      return (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center">
-            <div className="text-blue-600 mr-3">🛡️</div>
-            <div>
-              <div className="font-medium text-blue-800">Read-only Access for Compliance</div>
-              <div className="text-sm text-blue-600">
-                You have read-only access to audit data and persona information
-              </div>
-            </div>
-          </div>
-        </div>
-      );
+  // Handle smoke test execution
+  const handleRunSmokeTest = async () => {
+    console.log('🧪 Running Frontend Smoke Test...');
+    try {
+      const result = await runFrontendSmokeTest();
+      
+      const status = result.overall ? 'PASSED' : 'FAILED';
+      const message = `Smoke Test ${status}: ${result.summary.passed}/${result.summary.total} checks passed`;
+      
+      alert(`${message}\n\nCheck browser console for detailed results.`);
+    } catch (error) {
+      console.error('Smoke test execution failed:', error);
+      alert('Smoke test failed to execute. Check console for details.');
     }
-    return null;
   };
 
-  // Connectivity status component
-  const renderConnectivityBanner = () => {
-    const statusColor = connectivity.connected ? 'green' : 'red';
-    const statusText = connectivity.connected ? 'Connected' : 'Disconnected';
-    
-    return (
-      <div className={`bg-${statusColor}-50 border border-${statusColor}-200 rounded-lg p-4 mb-6`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className={`text-${statusColor}-600 mr-3`}>
-              {connectivity.connected ? '🟢' : '🔴'}
-            </div>
-            <div>
-              <div className={`font-medium text-${statusColor}-800`}>
-                Backend Connectivity: {statusText}
-              </div>
-              <div className={`text-sm text-${statusColor}-600`}>
-                Last handshake: {apiHelpers.formatTimestamp(connectivity.lastHandshake)}
-              </div>
-            </div>
-          </div>
-          <Button 
-            onClick={refetchAll}
-            variant="secondary"
-            size="sm"
-            loading={loading}
-          >
-            Refresh Data
-          </Button>
-        </div>
-      </div>
-    );
-  };
+  // Early return for authentication check
+  if (apiClient.isAnonymous()) {
+    return null; // Let useEffect handle redirect
+  }
 
   // Error state
   if (error && !kpis.data) {
@@ -148,11 +131,18 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Role banner */}
-        {renderRoleBanner()}
+        {/* Role banner - shows role-specific information and restrictions */}
+        <RoleBanner role={currentRole} />
 
-        {/* Connectivity banner */}
-        {renderConnectivityBanner()}
+        {/* Connectivity banner - shows backend connection status */}
+        <ConnectivityBanner
+          connected={connectivity.connected}
+          lastHandshake={connectivity.lastHandshake}
+          baseUrl={'baseUrl' in connectivity ? connectivity.baseUrl : 'Unknown'}
+          version={'version' in connectivity ? connectivity.version : undefined}
+          onRefresh={refetchAll}
+          loading={loading}
+        />
       </div>
 
       {/* KPI Cards */}
@@ -316,12 +306,70 @@ const DashboardPage: React.FC = () => {
           <div className="text-center p-4 bg-purple-50 rounded-lg">
             <div className="text-2xl mb-2">🔐</div>
             <div className="font-medium text-purple-800">Authentication</div>
-            <div className="text-sm text-purple-600">JWT Active</div>
+            <div className="text-sm text-purple-600">
+              {currentRole ? `${currentRole.replace('_', ' ')} Active` : 'Anonymous'}
+            </div>
           </div>
           <div className="text-center p-4 bg-green-50 rounded-lg">
             <div className="text-2xl mb-2">⚡</div>
-            <div className="font-medium text-green-800">RLS</div>
-            <div className="text-sm text-green-600">Enabled</div>
+            <div className="font-medium text-green-800">Data Freshness</div>
+            <div className="text-sm text-green-600">
+              Polling: {POLLING_INTERVALS.KPIs/1000}s
+            </div>
+          </div>
+        </div>
+
+        {/* Verification Controls */}
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
+            <div>
+              <h4 className="font-medium text-gray-900">Verification & Testing</h4>
+              <p className="text-sm text-gray-600">
+                Run verification checks to ensure all frontend mandate requirements are met
+              </p>
+            </div>
+            <div className="flex space-x-3">
+              <Button
+                onClick={handleRunSmokeTest}
+                variant="secondary"
+                size="sm"
+                className="flex items-center space-x-2"
+              >
+                <span>🧪</span>
+                <span>Run Smoke Test</span>
+              </Button>
+              <Button
+                onClick={refetchAll}
+                variant="primary"
+                size="sm"
+                loading={loading}
+                className="flex items-center space-x-2"
+              >
+                <span>🔄</span>
+                <span>Refresh All Data</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Deployment Information */}
+          <div className="mt-4 bg-gray-50 rounded-lg p-4 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <strong>Deployment Target:</strong><br />
+                <a 
+                  href="https://lisandrosuarez9-lab.github.io/DataboxMVL/dashboard" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
+                  https://lisandrosuarez9-lab.github.io/DataboxMVL/dashboard
+                </a>
+              </div>
+              <div>
+                <strong>Last Deployment:</strong><br />
+                {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
+              </div>
+            </div>
           </div>
         </div>
       </Card>

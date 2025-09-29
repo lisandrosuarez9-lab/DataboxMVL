@@ -4,3 +4,5 @@ export { default as Card } from './Card';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as Skeleton } from './Skeleton';
 export { VirtualizedTable } from './VirtualizedTable';
+export { ConnectivityBanner } from './ConnectivityBanner';
+export { RoleBanner } from './RoleBanner';
