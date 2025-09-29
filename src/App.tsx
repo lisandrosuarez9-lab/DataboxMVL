@@ -8,6 +8,7 @@ import LoginPage from '@/pages/LoginPage';
 import DashboardPage from '@/pages/DashboardPage';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { DiagnosticsDashboard } from '@/components/DiagnosticsDashboard';
 import '@/styles/globals.css';
 
 const App: React.FC = () => {
@@ -42,6 +43,12 @@ const App: React.FC = () => {
                     <p className="text-gray-600">Reports functionality coming soon...</p>
                   </div>
                 </Layout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/diagnostics" element={
+              <ProtectedRoute>
+                <DiagnosticsDashboard />
               </ProtectedRoute>
             } />
             

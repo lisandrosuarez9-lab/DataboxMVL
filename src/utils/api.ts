@@ -1,4 +1,7 @@
 import { Persona, AuditEntry, DashboardMetrics, ApiResponse, PaginatedResponse } from '@/types';
+import { validateAPIResponseWithStats } from '../lib/api-validators';
+import { getEnvironmentConfig } from '../lib/endpoint-checker';
+import { validateRequiredEnvVars } from '../lib/env-validator';
 
 // JWT decoding utility
 interface JWTPayload {
@@ -9,15 +12,26 @@ interface JWTPayload {
   iat: number;
 }
 
-// API Configuration - must not contain service_role key per security requirements
-const API_CONFIG = {
-  baseUrl: (import.meta as any).env?.VITE_SUPABASE_URL 
-    ? `${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1/api-v1`
-    : 'https://your-project.supabase.co/functions/v1/api-v1',
-  timeout: 30000,
-  maxRetries: 3,
-  retryDelay: 1000,
+// API Configuration - Enhanced with environment detection
+const getAPIConfig = () => {
+  const envConfig = getEnvironmentConfig();
+  
+  // Priority: explicit API URL > constructed from Supabase URL > fallback
+  const baseUrl = envConfig.VITE_API_URL || 
+                 envConfig.NEXT_PUBLIC_API_URL ||
+                 (envConfig.VITE_SUPABASE_URL ? `${envConfig.VITE_SUPABASE_URL}/functions/v1/api-v1` : null) ||
+                 (envConfig.NEXT_PUBLIC_SUPABASE_URL ? `${envConfig.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-v1` : null) ||
+                 'https://your-project.supabase.co/functions/v1/api-v1';
+
+  return {
+    baseUrl,
+    timeout: 30000,
+    maxRetries: 3,
+    retryDelay: 1000,
+  };
 };
+
+const API_CONFIG = getAPIConfig();
 
 // Exact endpoint definitions with expected shapes
 const ENDPOINTS = {
@@ -246,10 +260,33 @@ class APIClient {
 
         const data = await response.json();
 
-        // Validate response shape if expectedKeys provided
-        if (expectedKeys.length > 0 && data.data && !this.validateResponseShape(data.data, expectedKeys)) {
-          console.warn('Response shape validation failed for:', endpoint, expectedKeys);
-          // Log the validation failure but don't throw - this is for debugging
+        // Enhanced validation using new API contract validators
+        if (expectedKeys.length > 0) {
+          // Legacy shape validation for backward compatibility
+          if (data.data && !this.validateResponseShape(data.data, expectedKeys)) {
+            console.warn('Legacy response shape validation failed for:', endpoint, expectedKeys);
+          }
+          
+          // New contract validation with statistics tracking
+          const endpointType = this.getEndpointType(endpoint);
+          if (endpointType) {
+            const validation = validateAPIResponseWithStats(data.data || data, endpointType);
+            if (!validation.valid) {
+              console.warn('API contract validation failed for:', endpoint, {
+                type: endpointType,
+                errors: validation.errors,
+                warnings: validation.warnings
+              });
+              
+              // Log validation failure for monitoring
+              this.logUIEvent('api_validation_failure', {
+                endpoint,
+                type: endpointType,
+                errors: validation.errors,
+                timestamp: new Date().toISOString()
+              });
+            }
+          }
         }
 
         // Log successful API call for verification
@@ -279,6 +316,19 @@ class APIClient {
     }
 
     throw lastError!;
+  }
+
+  // Determine endpoint type for validation
+  private getEndpointType(endpoint: string): string | null {
+    if (endpoint.includes('/personas/explain')) return 'score_response';
+    if (endpoint.includes('/personas/trend')) return 'score_trend';
+    if (endpoint.includes('/personas')) return 'persona_list';
+    if (endpoint.includes('/audit')) return 'audit_entries';
+    if (endpoint.includes('/kpis')) return 'dashboard_kpis';
+    if (endpoint.includes('/simulation')) return 'simulation_result';
+    if (endpoint.includes('/toggle-flag')) return 'toggle_result';
+    if (endpoint.includes('/health')) return 'health_check';
+    return null;
   }
 
   // Calculate simple checksum for response verification
@@ -421,14 +471,24 @@ class APIClient {
     return response.data;
   }
 
-  // Get connectivity status with actual health check
+  // Get connectivity status with actual health check and environment validation
   public async getConnectivityStatus(): Promise<{
     connected: boolean;
     lastHandshake: string;
     baseUrl: string;
+    responseTime?: number;
+    error?: string;
+    authenticated: boolean;
+    userRole?: string;
+    environmentValid: boolean;
+    environmentIssues: string[];
     version?: string;
   }> {
+    const startTime = performance.now();
     const timestamp = new Date().toISOString();
+    
+    // Validate environment configuration
+    const envValidation = validateRequiredEnvVars();
     
     try {
       // Perform minimal health call (HEAD request to avoid response payload)
@@ -440,12 +500,14 @@ class APIClient {
         signal: AbortSignal.timeout(5000)
       });
 
+      const responseTime = performance.now() - startTime;
       const connected = response.status >= 200 && response.status < 300;
       
       this.logUIEvent('connectivity_check', {
         endpoint: '/health',
         status: response.status,
         connected,
+        responseTime,
         timestamp
       });
 
@@ -453,30 +515,62 @@ class APIClient {
         connected,
         lastHandshake: timestamp,
         baseUrl: this.baseUrl,
+        responseTime,
+        authenticated: !!this.getJWTToken(),
+        userRole: this.getCurrentUserRole() || undefined,
+        environmentValid: envValidation.isValid,
+        environmentIssues: [
+          ...envValidation.missingVars.map(v => `Missing: ${v}`),
+          ...Object.entries(envValidation.malformedVars).map(([k, v]) => `${k}: ${v}`),
+          ...envValidation.warnings
+        ],
         version: response.headers.get('x-api-version') || '1.0.0'
       };
     } catch (error) {
       // Fallback to KPIs endpoint if health endpoint not available
       try {
+        const responseTime = performance.now() - startTime;
         await this.getKPIs();
         return {
           connected: true,
           lastHandshake: timestamp,
           baseUrl: this.baseUrl,
+          responseTime,
+          authenticated: !!this.getJWTToken(),
+          userRole: this.getCurrentUserRole() || undefined,
+          environmentValid: envValidation.isValid,
+          environmentIssues: [
+            ...envValidation.missingVars.map(v => `Missing: ${v}`),
+            ...Object.entries(envValidation.malformedVars).map(([k, v]) => `${k}: ${v}`),
+            ...envValidation.warnings
+          ],
           version: '1.0.0'
         };
       } catch (fallbackError) {
+        const responseTime = performance.now() - startTime;
+        
         this.logUIEvent('connectivity_check', {
           endpoint: '/health',
           error: error instanceof Error ? error.message : 'Unknown error',
           connected: false,
+          responseTime,
           timestamp
         });
 
         return {
           connected: false,
           lastHandshake: timestamp,
-          baseUrl: this.baseUrl
+          baseUrl: this.baseUrl,
+          responseTime,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          authenticated: !!this.getJWTToken(),
+          userRole: this.getCurrentUserRole() || undefined,
+          environmentValid: envValidation.isValid,
+          environmentIssues: [
+            ...envValidation.missingVars.map(v => `Missing: ${v}`),
+            ...Object.entries(envValidation.malformedVars).map(([k, v]) => `${k}: ${v}`),
+            ...envValidation.warnings
+          ]
         };
       }
     }
@@ -578,6 +672,7 @@ class APIClient {
       computed_at_simulation: new Date().toISOString()
     };
   }
+
   public async runSmokeTest(): Promise<{
     personas: boolean;
     audit: boolean;
