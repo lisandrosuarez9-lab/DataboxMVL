@@ -17,6 +17,7 @@ const Header: React.FC = () => {
     { name: 'Home', href: '/', icon: '🏠' },
     { name: 'Dashboard', href: '/dashboard', icon: '📊' },
     { name: 'Reports', href: '/reports', icon: '📈' },
+    { name: 'Diagnostics', href: '/diagnostics', icon: '🔍' },
     { name: 'Settings', href: '/settings', icon: '⚙️' },
   ];
 
