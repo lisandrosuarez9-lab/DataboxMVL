@@ -1,11 +1,6 @@
-import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { RootState } from '@/stores';
-import { 
-  fetchDashboardDataStart,
-  fetchDashboardDataSuccess,
-  updateMetrics 
-} from '@/stores/slices/dashboardSlice';
 import { 
   TotalPersonasKPI, 
   FlaggedPersonasKPI, 
@@ -13,188 +8,128 @@ import {
   PersonaTable,
   EnhancedAuditLogTable 
 } from '@/components/dashboard';
-import { Card } from '@/components/ui';
-import { DashboardMetrics, PersonaFlag, AuditEntry, Persona } from '@/types';
+import { Card, Button } from '@/components/ui';
+import { useDashboardData, usePersonaExplanation } from '@/hooks/useAPI';
+import { apiHelpers } from '@/utils/api';
 
 const DashboardPage: React.FC = () => {
-  const dispatch = useDispatch();
-  const { metrics, personas, auditEntries, loading } = useSelector(
-    (state: RootState) => state.dashboard
-  );
   const { currentUser } = useSelector((state: RootState) => state.user);
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
+  const [showExplanationModal, setShowExplanationModal] = useState(false);
 
-  useEffect(() => {
-    // Fetch initial dashboard data
-    const fetchData = async () => {
-      dispatch(fetchDashboardDataStart());
+  // Use the dashboard data hook with auto-refresh every 30 seconds
+  const {
+    personas,
+    auditEntries,
+    kpis,
+    connectivity,
+    permissions,
+    loading,
+    error,
+    refetchAll
+  } = useDashboardData({
+    autoRefresh: true,
+    refreshInterval: 30000
+  });
 
-      // Simulate API call with mock data
-      setTimeout(() => {
-        const mockMetrics: DashboardMetrics = {
-          totalPersonas: 1247,
-          reviewNeeded: 23,
-          auditEntries: 5681,
-          lastUpdated: new Date().toISOString(),
-          growthRate: 5.2,
-          flaggedPercentage: 1.8,
-          dailyAverageActivity: 142,
-          unusualActivityDetected: false
-        };
+  // Hook for persona explanation
+  const personaExplanation = usePersonaExplanation(selectedPersonaId);
 
-        const mockPersonas: Persona[] = [
-          {
-            id: 'persona-001',
-            user_id_review_needed: true,
-            is_test: false,
-            created_at: new Date(Date.now() - 86400000).toISOString(),
-            updated_at: new Date(Date.now() - 3600000).toISOString(),
-            risk_score: 75,
-            trust_level: 'MEDIUM',
-            verification_status: 'PENDING',
-            full_name: 'Maria Rodriguez Silva',
-            email: 'maria.rodriguez@email.com',
-            phone: '+1234567890',
-            document_id: 'ID123456789',
-            employment_status: 'Employed',
-            income_level: 45000,
-            credit_score: 680,
-            created_by: 'system',
-            updated_by: 'compliance'
-          },
-          {
-            id: 'persona-002',
-            user_id_review_needed: false,
-            is_test: true,
-            created_at: new Date(Date.now() - 172800000).toISOString(),
-            updated_at: new Date(Date.now() - 7200000).toISOString(),
-            risk_score: 25,
-            trust_level: 'HIGH',
-            verification_status: 'VERIFIED',
-            full_name: 'Test User Account',
-            email: 'test@databox.mvl',
-            employment_status: 'Test',
-            income_level: 50000,
-            credit_score: 750,
-            created_by: 'system',
-            updated_by: 'service_role'
-          },
-          {
-            id: 'persona-003',
-            user_id_review_needed: true,
-            is_test: false,
-            created_at: new Date(Date.now() - 259200000).toISOString(),
-            updated_at: new Date(Date.now() - 1800000).toISOString(),
-            risk_score: 90,
-            trust_level: 'LOW',
-            verification_status: 'REJECTED',
-            full_name: 'Carlos Mendoza Lopez',
-            email: 'carlos.mendoza@email.com',
-            phone: '+0987654321',
-            document_id: 'ID987654321',
-            employment_status: 'Unemployed',
-            income_level: 15000,
-            credit_score: 450,
-            created_by: 'system',
-            updated_by: 'compliance'
-          }
-        ];
+  // Handle persona click to show explanation
+  const handlePersonaClick = (persona: any) => {
+    setSelectedPersonaId(persona.id);
+    setShowExplanationModal(true);
+    personaExplanation.fetchExplanation();
+  };
 
-        const mockPersonaFlags: PersonaFlag[] = [
-          {
-            id: '1',
-            persona_id: 'PERSONA_001',
-            flag_type: 'CREDIT_REVIEW',
-            flag_value: 'REQUIRES_MANUAL_REVIEW',
-            created_at: new Date(Date.now() - 3600000).toISOString(),
-            updated_at: new Date(Date.now() - 1800000).toISOString(),
-            created_by: 'system',
-          },
-          {
-            id: '2',
-            persona_id: 'PERSONA_002',
-            flag_type: 'IDENTITY_VERIFICATION',
-            flag_value: 'PENDING_DOCUMENTS',
-            created_at: new Date(Date.now() - 7200000).toISOString(),
-            updated_at: new Date(Date.now() - 3600000).toISOString(),
-            created_by: 'service_role',
-          },
-          {
-            id: '3',
-            persona_id: 'PERSONA_003',
-            flag_type: 'COMPLIANCE_CHECK',
-            flag_value: 'APPROVED',
-            created_at: new Date(Date.now() - 14400000).toISOString(),
-            updated_at: new Date(Date.now() - 7200000).toISOString(),
-            created_by: 'compliance',
-          },
-        ];
+  // Handle modal close
+  const handleCloseExplanationModal = () => {
+    setShowExplanationModal(false);
+    setSelectedPersonaId(null);
+  };
 
-        const mockAuditEntries: AuditEntry[] = [
-          {
-            audit_id: 'AUDIT_001',
-            persona_id: 'PERSONA_001',
-            field_name: 'verification_status',
-            old_value: 'PENDING_REVIEW',
-            new_value: 'REQUIRES_MANUAL_REVIEW',
-            changed_at: new Date(Date.now() - 1800000).toISOString(),
-            changed_by: 'system',
-            action_type: 'UPDATE',
-          },
-          {
-            audit_id: 'AUDIT_002',
-            persona_id: 'PERSONA_004',
-            field_name: 'flag_type',
-            old_value: null,
-            new_value: 'INITIAL_SETUP',
-            changed_at: new Date(Date.now() - 3600000).toISOString(),
-            changed_by: 'service_role',
-            action_type: 'INSERT',
-          },
-          {
-            audit_id: 'AUDIT_003',
-            persona_id: 'PERSONA_002',
-            field_name: 'flag_value',
-            old_value: 'PENDING_VERIFICATION',
-            new_value: 'PENDING_DOCUMENTS',
-            changed_at: new Date(Date.now() - 7200000).toISOString(),
-            changed_by: 'service_role',
-            action_type: 'UPDATE',
-          },
-        ];
+  // Role-based UI rendering
+  const renderRoleBanner = () => {
+    if (permissions.role === 'compliance') {
+      return (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <div className="text-blue-600 mr-3">🛡️</div>
+            <div>
+              <div className="font-medium text-blue-800">Read-only Access for Compliance</div>
+              <div className="text-sm text-blue-600">
+                You have read-only access to audit data and persona information
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
 
-        dispatch(fetchDashboardDataSuccess({
-          metrics: mockMetrics,
-          personas: mockPersonas,
-          personaFlags: mockPersonaFlags,
-          auditEntries: mockAuditEntries,
-        }));
-      }, 1500);
-    };
+  // Connectivity status component
+  const renderConnectivityBanner = () => {
+    const statusColor = connectivity.connected ? 'green' : 'red';
+    const statusText = connectivity.connected ? 'Connected' : 'Disconnected';
+    
+    return (
+      <div className={`bg-${statusColor}-50 border border-${statusColor}-200 rounded-lg p-4 mb-6`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className={`text-${statusColor}-600 mr-3`}>
+              {connectivity.connected ? '🟢' : '🔴'}
+            </div>
+            <div>
+              <div className={`font-medium text-${statusColor}-800`}>
+                Backend Connectivity: {statusText}
+              </div>
+              <div className={`text-sm text-${statusColor}-600`}>
+                Last handshake: {apiHelpers.formatTimestamp(connectivity.lastHandshake)}
+              </div>
+            </div>
+          </div>
+          <Button 
+            onClick={refetchAll}
+            variant="secondary"
+            size="sm"
+            loading={loading}
+          >
+            Refresh Data
+          </Button>
+        </div>
+      </div>
+    );
+  };
 
-    fetchData();
-
-    // Set up real-time updates simulation
-    const interval = setInterval(() => {
-      if (metrics) {
-        const updatedMetrics: DashboardMetrics = {
-          ...metrics,
-          totalPersonas: metrics.totalPersonas + Math.floor(Math.random() * 3),
-          reviewNeeded: Math.max(0, metrics.reviewNeeded + Math.floor(Math.random() * 5) - 2),
-          auditEntries: metrics.auditEntries + Math.floor(Math.random() * 2),
-          lastUpdated: new Date().toISOString(),
-        };
-        dispatch(updateMetrics(updatedMetrics));
-      }
-    }, 30000); // Update every 30 seconds
-
-    return () => clearInterval(interval);
-  }, [dispatch, metrics]);
+  // Error state
+  if (error && !kpis.data) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-brand-primary to-brand-secondary p-6">
+        <Card className="max-w-md mx-auto text-center">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Connection Error
+          </h2>
+          <p className="text-gray-600 mb-4">
+            {apiHelpers.getErrorMessage(new Error(error))}
+          </p>
+          <div className="text-sm text-gray-500 mb-4">
+            Timestamp: {new Date().toISOString()}
+          </div>
+          <Button onClick={refetchAll} loading={loading}>
+            Retry Connection
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="p-6 bg-gradient-to-br from-gray-50 to-white min-h-screen">
       {/* Header */}
-      <div className="bg-white/95 backdrop-blur-sm rounded-xl p-6 shadow-soft">
-        <div className="flex items-center justify-between">
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
               🛡️ Persona Flag Audit Dashboard
@@ -205,41 +140,47 @@ const DashboardPage: React.FC = () => {
           </div>
           <div className="text-right">
             <div className="text-sm text-gray-600">
-              Logged in as: <span className="font-medium">{currentUser?.role.replace('_', ' ')}</span>
+              Logged in as: <span className="font-medium">{currentUser?.role?.replace('_', ' ')}</span>
             </div>
             <div className="text-xs text-gray-500">
-              {metrics?.lastUpdated && `Last updated: ${new Date(metrics.lastUpdated).toLocaleTimeString()}`}
+              {kpis.lastUpdated && `Last updated: ${apiHelpers.getTimeAgo(kpis.lastUpdated)}`}
             </div>
           </div>
         </div>
+
+        {/* Role banner */}
+        {renderRoleBanner()}
+
+        {/* Connectivity banner */}
+        {renderConnectivityBanner()}
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <TotalPersonasKPI
-          totalPersonas={metrics?.totalPersonas || 0}
-          loading={loading}
-          growthRate={metrics?.growthRate}
+          totalPersonas={kpis.data?.totalPersonas || 0}
+          loading={kpis.loading}
+          growthRate={kpis.data?.growthRate}
           onViewDetails={() => console.log('View persona details')}
         />
         
         <FlaggedPersonasKPI
-          reviewNeeded={metrics?.reviewNeeded || 0}
-          totalPersonas={metrics?.totalPersonas || 0}
-          loading={loading}
-          onViewFlagged={() => console.log('View flagged personas')}
+          reviewNeeded={kpis.data?.flaggedPersonas || kpis.data?.reviewNeeded || 0}
+          totalPersonas={kpis.data?.totalPersonas || 0}
+          loading={kpis.loading}
+          onViewFlagged={() => personas.refetch()}
         />
         
         <AuditActivityKPI
-          auditEntries={metrics?.auditEntries || 0}
-          loading={loading}
-          dailyAverage={metrics?.dailyAverageActivity}
-          onViewAudit={() => console.log('View audit log')}
+          auditEntries={kpis.data?.auditEntries || 0}
+          loading={kpis.loading}
+          dailyAverage={kpis.data?.dailyAverageActivity}
+          onViewAudit={() => auditEntries.refetch()}
         />
       </div>
 
       {/* Database Overview */}
-      <Card title="📊 Database Schema Overview" className="bg-white/95 backdrop-blur-sm">
+      <Card title="📊 Database Schema Overview" className="bg-white/95 backdrop-blur-sm mb-8">
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <h4 className="font-semibold text-gray-900 mb-3">Core Tables</h4>
@@ -274,52 +215,199 @@ const DashboardPage: React.FC = () => {
       <div className="space-y-8">
         {/* Main Persona Table */}
         <Card title="🧑‍💼 Persona Management" subtitle="Comprehensive persona data with advanced filtering and sorting">
-          <PersonaTable
-            personas={personas}
-            loading={loading}
-            onPersonaClick={(persona) => console.log('View persona:', persona.id)}
-            onPersonaSelect={(selectedIds) => console.log('Selected personas:', selectedIds)}
-            onExport={(format, selectedRows) => console.log('Export:', format, selectedRows?.length)}
-            enableInlineEdit={currentUser?.role === 'service_role'}
-          />
+          {personas.error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <div className="text-red-800 font-medium">Failed to load personas</div>
+              <div className="text-red-600 text-sm">{personas.error}</div>
+              <Button 
+                onClick={personas.refetch} 
+                size="sm" 
+                className="mt-2"
+                loading={personas.loading}
+              >
+                Retry
+              </Button>
+            </div>
+          )}
+          
+          {personas.data?.data && (
+            <PersonaTable
+              personas={personas.data.data}
+              loading={personas.loading}
+              onPersonaClick={handlePersonaClick}
+              onPersonaSelect={(selectedIds) => console.log('Selected personas:', selectedIds)}
+              onExport={(format, selectedRows) => console.log('Export:', format, selectedRows?.length)}
+              enableInlineEdit={permissions.role === 'service_role'}
+            />
+          )}
+
+          {!personas.loading && (!personas.data?.data || personas.data.data.length === 0) && (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">📊</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Personas Found</h3>
+              <p className="text-gray-600 mb-4">
+                There are no personas in the database or they may not be accessible with your current permissions.
+              </p>
+              <Button onClick={personas.refetch} loading={personas.loading}>
+                Refresh Data
+              </Button>
+            </div>
+          )}
         </Card>
 
         {/* Enhanced Audit Log */}
         <Card title="📋 Audit Trail" subtitle="Detailed audit log with change visualization and temporal grouping">
-          <EnhancedAuditLogTable
-            entries={auditEntries}
-            loading={loading}
-            onEntryClick={(entry) => console.log('View audit entry:', entry.audit_id)}
-            onExport={(format, selectedRows) => console.log('Export audit:', format, selectedRows?.length)}
-          />
+          {auditEntries.error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <div className="text-red-800 font-medium">Failed to load audit entries</div>
+              <div className="text-red-600 text-sm">{auditEntries.error}</div>
+              <Button 
+                onClick={auditEntries.refetch} 
+                size="sm" 
+                className="mt-2"
+                loading={auditEntries.loading}
+              >
+                Retry
+              </Button>
+            </div>
+          )}
+
+          {auditEntries.data?.data && (
+            <EnhancedAuditLogTable
+              entries={auditEntries.data.data}
+              loading={auditEntries.loading}
+              onEntryClick={(entry) => console.log('View audit entry:', entry.audit_id)}
+              onExport={(format, selectedRows) => console.log('Export audit:', format, selectedRows?.length)}
+            />
+          )}
+
+          {!auditEntries.loading && (!auditEntries.data?.data || auditEntries.data.data.length === 0) && (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">📋</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Audit Entries Found</h3>
+              <p className="text-gray-600 mb-4">
+                There are no audit entries to display. This could indicate that audit infrastructure is not yet configured.
+              </p>
+              <Button onClick={auditEntries.refetch} loading={auditEntries.loading}>
+                Refresh Data
+              </Button>
+            </div>
+          )}
         </Card>
       </div>
 
-      {/* Connection Status */}
-      <Card title="🔗 Connection Status" className="bg-white/95 backdrop-blur-sm">
+      {/* Connection Status - Real connectivity info */}
+      <Card title="🔗 Connection Status" className="bg-white/95 backdrop-blur-sm mt-8">
         <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-green-50 rounded-lg">
-            <div className="text-2xl mb-2">📡</div>
-            <div className="font-medium text-green-800">Real-time Subscriptions</div>
-            <div className="text-sm text-green-600">Connected</div>
+          <div className={`text-center p-4 ${connectivity.connected ? 'bg-green-50' : 'bg-red-50'} rounded-lg`}>
+            <div className="text-2xl mb-2">{connectivity.connected ? '📡' : '📵'}</div>
+            <div className={`font-medium ${connectivity.connected ? 'text-green-800' : 'text-red-800'}`}>
+              Backend API
+            </div>
+            <div className={`text-sm ${connectivity.connected ? 'text-green-600' : 'text-red-600'}`}>
+              {connectivity.connected ? 'Connected' : 'Disconnected'}
+            </div>
           </div>
           <div className="text-center p-4 bg-blue-50 rounded-lg">
             <div className="text-2xl mb-2">🔄</div>
-            <div className="font-medium text-blue-800">Sync Status</div>
-            <div className="text-sm text-blue-600">In Sync</div>
-          </div>
-          <div className="text-center p-4 bg-green-50 rounded-lg">
-            <div className="text-2xl mb-2">⚡</div>
-            <div className="font-medium text-green-800">Performance</div>
-            <div className="text-sm text-green-600">~{Math.floor(Math.random() * 50 + 10)}ms</div>
+            <div className="font-medium text-blue-800">Auto-refresh</div>
+            <div className="text-sm text-blue-600">Every 30s</div>
           </div>
           <div className="text-center p-4 bg-purple-50 rounded-lg">
             <div className="text-2xl mb-2">🔐</div>
-            <div className="font-medium text-purple-800">Security</div>
-            <div className="text-sm text-purple-600">RLS Enabled</div>
+            <div className="font-medium text-purple-800">Authentication</div>
+            <div className="text-sm text-purple-600">JWT Active</div>
+          </div>
+          <div className="text-center p-4 bg-green-50 rounded-lg">
+            <div className="text-2xl mb-2">⚡</div>
+            <div className="font-medium text-green-800">RLS</div>
+            <div className="text-sm text-green-600">Enabled</div>
           </div>
         </div>
       </Card>
+
+      {/* Persona Explanation Modal */}
+      {showExplanationModal && selectedPersonaId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Credit Score Explanation
+                </h2>
+                <button
+                  onClick={handleCloseExplanationModal}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="text-gray-600 mt-1">
+                Persona ID: {selectedPersonaId}
+              </p>
+            </div>
+            
+            <div className="p-6">
+              {personaExplanation.loading && (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-gray-600 mt-2">Loading explanation...</p>
+                </div>
+              )}
+
+              {personaExplanation.error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="text-red-800 font-medium">Failed to load explanation</div>
+                  <div className="text-red-600 text-sm">{personaExplanation.error}</div>
+                  <Button 
+                    onClick={personaExplanation.fetchExplanation} 
+                    size="sm" 
+                    className="mt-2"
+                  >
+                    Retry
+                  </Button>
+                </div>
+              )}
+
+              {personaExplanation.data && (
+                <div className="space-y-4">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="font-medium text-gray-900 mb-2">Score Details</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600">Score:</span>
+                        <span className="ml-2 font-medium">{personaExplanation.data.score || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Computed At:</span>
+                        <span className="ml-2 font-medium">
+                          {personaExplanation.data.computed_at 
+                            ? apiHelpers.formatTimestamp(personaExplanation.data.computed_at)
+                            : 'N/A'
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="font-medium text-gray-900 mb-2">Explanation JSON</h3>
+                    <pre className="text-xs bg-white border rounded p-3 overflow-x-auto">
+                      {JSON.stringify(personaExplanation.data.explanation || personaExplanation.data, null, 2)}
+                    </pre>
+                  </div>
+
+                  {personaExplanation.lastUpdated && (
+                    <div className="text-xs text-gray-500 text-center">
+                      Retrieved: {apiHelpers.formatTimestamp(personaExplanation.lastUpdated)}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

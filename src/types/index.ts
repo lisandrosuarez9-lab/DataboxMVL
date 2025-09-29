@@ -72,7 +72,8 @@ export interface ProtocolData {
 // Dashboard related types
 export interface DashboardMetrics {
   totalPersonas: number;
-  reviewNeeded: number;
+  reviewNeeded?: number; // Legacy field name
+  flaggedPersonas: number; // New field name for consistency with API
   auditEntries: number;
   lastUpdated: string;
   // Enhanced KPI metrics
