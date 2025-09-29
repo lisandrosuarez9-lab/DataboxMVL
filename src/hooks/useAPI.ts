@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient, apiHelpers } from '@/utils/api';
+import { POLLING_INTERVALS } from '@/utils/pollingConfig';
 import { Persona, AuditEntry, DashboardMetrics, PaginatedResponse } from '@/types';
 
 // Generic API hook with loading, error, and data states
@@ -256,10 +257,12 @@ export function useConnectivityStatus(checkInterval: number = 30000) {
   const [status, setStatus] = useState<{
     connected: boolean;
     lastHandshake: string;
+    baseUrl: string;
     version?: string;
   }>({
     connected: false,
-    lastHandshake: new Date().toISOString()
+    lastHandshake: new Date().toISOString(),
+    baseUrl: 'Unknown'
   });
 
   const checkConnectivity = useCallback(async () => {
@@ -269,7 +272,8 @@ export function useConnectivityStatus(checkInterval: number = 30000) {
     } catch (err) {
       setStatus({
         connected: false,
-        lastHandshake: new Date().toISOString()
+        lastHandshake: new Date().toISOString(),
+        baseUrl: 'Unknown'
       });
     }
   }, []);
@@ -363,7 +367,7 @@ export function useSmokeTest() {
   };
 }
 
-// Composite hook for dashboard data
+// Composite hook for dashboard data with proper polling intervals
 export function useDashboardData(params: {
   autoRefresh?: boolean;
   refreshInterval?: number;
@@ -373,21 +377,21 @@ export function useDashboardData(params: {
     sortBy: 'created_at',
     sortOrder: 'desc',
     autoRefresh: params.autoRefresh,
-    refreshInterval: params.refreshInterval
+    refreshInterval: params.refreshInterval || POLLING_INTERVALS.PERSONAS
   });
 
   const auditEntries = useAuditEntries({
     limit: 25,
     autoRefresh: params.autoRefresh,
-    refreshInterval: params.refreshInterval
+    refreshInterval: params.refreshInterval || POLLING_INTERVALS.AUDIT
   });
 
   const kpis = useKPIs({
     autoRefresh: params.autoRefresh,
-    refreshInterval: params.refreshInterval
+    refreshInterval: params.refreshInterval || POLLING_INTERVALS.KPIs
   });
 
-  const connectivity = useConnectivityStatus();
+  const connectivity = useConnectivityStatus(POLLING_INTERVALS.CONNECTIVITY);
   const permissions = usePermissions();
 
   const loading = personas.loading || auditEntries.loading || kpis.loading;

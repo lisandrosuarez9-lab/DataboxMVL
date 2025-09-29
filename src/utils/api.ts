@@ -9,7 +9,7 @@ interface JWTPayload {
   iat: number;
 }
 
-// API Configuration
+// API Configuration - must not contain service_role key per security requirements
 const API_CONFIG = {
   baseUrl: (import.meta as any).env?.VITE_SUPABASE_URL 
     ? `${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1/api-v1`
@@ -17,6 +17,28 @@ const API_CONFIG = {
   timeout: 30000,
   maxRetries: 3,
   retryDelay: 1000,
+};
+
+// Exact endpoint definitions with expected shapes
+const ENDPOINTS = {
+  PERSONAS_LIST: '/personas',
+  PERSONA_EXPLAIN: '/personas/explain',
+  PERSONA_TREND: '/personas/trend', 
+  AUDIT_LIST: '/audit',
+  KPIS: '/kpis',
+  SIMULATION: '/simulation',
+  TOGGLE_FLAG: '/personas/toggle-flag',
+  HEALTH: '/health'
+} as const;
+
+// Expected response shapes for validation
+const EXPECTED_SHAPES = {
+  PERSONAS: ['id', 'nombre', 'documento_id', 'user_id_review_needed', 'is_test', 'created_at'],
+  PERSONA_EXPLAIN: ['score', 'explanation', 'computed_at'],
+  AUDIT: ['audit_id', 'persona_id', 'field_name', 'old_value', 'new_value', 'changed_by', 'changed_at'],
+  KPIS: ['totalPersonas', 'flaggedPersonas', 'auditEntries', 'lastUpdated'],
+  SIMULATION: ['simulated_score', 'explanation', 'computed_at_simulation'],
+  TOGGLE_RESULT: ['success', 'audit_id', 'timestamp']
 };
 
 // HTTP Client class with JWT authentication and error handling
@@ -33,17 +55,43 @@ class APIClient {
     this.retryDelay = config.retryDelay;
   }
 
-  // Get JWT token from localStorage or Redux store
+  // Get JWT token from localStorage or Redux store - secure handling
   private getJWTToken(): string | null {
-    // In a real implementation, this would get from your auth system
-    // For now, return a mock JWT or get from localStorage
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      return token;
+    // Try multiple sources for JWT token
+    const sources = [
+      () => localStorage.getItem('auth_token'),
+      () => sessionStorage.getItem('auth_token'),
+      () => {
+        // Try to get from Redux store if available
+        const store = (window as any).__REDUX_STORE__;
+        return store && store.getState()?.user?.token;
+      }
+    ];
+
+    for (const getToken of sources) {
+      try {
+        const token = getToken();
+        if (token && this.validateJWTFormat(token)) {
+          return token;
+        }
+      } catch (error) {
+        console.warn('Error accessing token source:', error);
+      }
     }
 
-    // Mock JWT for testing purposes
-    return this.createMockJWT();
+    // Only use mock JWT in development mode
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Using mock JWT for development');
+      return this.createMockJWT();
+    }
+
+    return null;
+  }
+
+  // Validate JWT format without decoding
+  private validateJWTFormat(token: string): boolean {
+    const parts = token.split('.');
+    return parts.length === 3 && parts.every(part => part.length > 0);
   }
 
   // Create a mock JWT for testing
@@ -85,10 +133,42 @@ class APIClient {
     }
   }
 
-  // Get current user role from JWT
+  // Get current user role from JWT - re-evaluates on every call
   public getCurrentUserRole(): 'compliance' | 'service_role' | null {
     const payload = this.decodeJWT();
+    if (!payload) return null;
+    
+    // Re-validate token expiration on every call
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+      console.warn('JWT token expired, clearing token');
+      this.clearStoredTokens();
+      return null;
+    }
+    
     return payload?.role || null;
+  }
+
+  // Clear all stored tokens
+  private clearStoredTokens(): void {
+    try {
+      localStorage.removeItem('auth_token');
+      sessionStorage.removeItem('auth_token');
+    } catch (error) {
+      console.warn('Error clearing stored tokens:', error);
+    }
+  }
+
+  // Deterministic role check API
+  public isCompliance(): boolean {
+    return this.getCurrentUserRole() === 'compliance';
+  }
+
+  public isServiceRole(): boolean {
+    return this.getCurrentUserRole() === 'service_role';
+  }
+
+  public isAnonymous(): boolean {
+    return this.getCurrentUserRole() === null;
   }
 
   // Validate response shape against expected keys
@@ -341,30 +421,163 @@ class APIClient {
     return response.data;
   }
 
-  // Get connectivity status
+  // Get connectivity status with actual health check
   public async getConnectivityStatus(): Promise<{
     connected: boolean;
     lastHandshake: string;
+    baseUrl: string;
     version?: string;
   }> {
+    const timestamp = new Date().toISOString();
+    
     try {
-      // Simple health check by calling KPIs endpoint
-      await this.getKPIs();
+      // Perform minimal health call (HEAD request to avoid response payload)
+      const response = await fetch(`${this.baseUrl}/health`, {
+        method: 'HEAD',
+        headers: {
+          'Authorization': `Bearer ${this.getJWTToken() || 'anonymous'}`
+        },
+        signal: AbortSignal.timeout(5000)
+      });
+
+      const connected = response.status >= 200 && response.status < 300;
       
+      this.logUIEvent('connectivity_check', {
+        endpoint: '/health',
+        status: response.status,
+        connected,
+        timestamp
+      });
+
       return {
-        connected: true,
-        lastHandshake: new Date().toISOString(),
-        version: '1.0.0'
+        connected,
+        lastHandshake: timestamp,
+        baseUrl: this.baseUrl,
+        version: response.headers.get('x-api-version') || '1.0.0'
       };
     } catch (error) {
-      return {
-        connected: false,
-        lastHandshake: new Date().toISOString(),
-      };
+      // Fallback to KPIs endpoint if health endpoint not available
+      try {
+        await this.getKPIs();
+        return {
+          connected: true,
+          lastHandshake: timestamp,
+          baseUrl: this.baseUrl,
+          version: '1.0.0'
+        };
+      } catch (fallbackError) {
+        this.logUIEvent('connectivity_check', {
+          endpoint: '/health',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          connected: false,
+          timestamp
+        });
+
+        return {
+          connected: false,
+          lastHandshake: timestamp,
+          baseUrl: this.baseUrl
+        };
+      }
     }
   }
 
-  // Test all endpoints for verification
+  // Toggle flag action - uses secure RPC endpoint
+  public async togglePersonaFlag(personaId: string, flagValue: boolean): Promise<{
+    success: boolean;
+    audit_id?: string;
+    timestamp: string;
+    message?: string;
+  }> {
+    // Ensure only service_role can perform toggle actions
+    if (!this.isServiceRole()) {
+      throw new Error('Access denied: Only service_role can toggle persona flags');
+    }
+
+    const response = await this.request<ApiResponse<any>>(
+      ENDPOINTS.TOGGLE_FLAG,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          persona_id: personaId,
+          user_id_review_needed: flagValue
+        })
+      },
+      EXPECTED_SHAPES.TOGGLE_RESULT
+    );
+
+    return {
+      success: response.data.success,
+      audit_id: response.data.audit_id,
+      timestamp: new Date().toISOString(),
+      message: response.data.message
+    };
+  }
+
+  // Verify audit entry creation after toggle
+  public async verifyAuditEntry(auditId: string, timeoutMs: number = 10000): Promise<boolean> {
+    const startTime = Date.now();
+    
+    while (Date.now() - startTime < timeoutMs) {
+      try {
+        const auditResponse = await this.getAuditEntries({ limit: 50 });
+        const auditEntry = auditResponse.data.find(entry => entry.audit_id === auditId);
+        
+        if (auditEntry) {
+          this.logUIEvent('audit_verification_success', {
+            audit_id: auditId,
+            verified_at: new Date().toISOString()
+          });
+          return true;
+        }
+        
+        // Wait 1 second before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.warn('Audit verification check failed:', error);
+      }
+    }
+    
+    this.logUIEvent('audit_verification_timeout', {
+      audit_id: auditId,
+      timeout_ms: timeoutMs,
+      timestamp: new Date().toISOString()
+    });
+    
+    return false;
+  }
+
+  // Scenario simulation endpoint
+  public async simulateScore(personaId: string, overrides: Record<string, any>): Promise<{
+    simulated_score: number;
+    explanation: any;
+    computed_at_simulation: string;
+    original_score?: number;
+  }> {
+    // Only service_role and compliance can run simulations per requirements
+    const role = this.getCurrentUserRole();
+    if (!role || (role !== 'service_role' && role !== 'compliance')) {
+      throw new Error('Access denied: Only service_role or compliance can run simulations');
+    }
+
+    const response = await this.request<ApiResponse<any>>(
+      ENDPOINTS.SIMULATION,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          persona_id: personaId,
+          overrides,
+          simulation_only: true
+        })
+      },
+      EXPECTED_SHAPES.SIMULATION
+    );
+
+    return {
+      ...response.data,
+      computed_at_simulation: new Date().toISOString()
+    };
+  }
   public async runSmokeTest(): Promise<{
     personas: boolean;
     audit: boolean;
