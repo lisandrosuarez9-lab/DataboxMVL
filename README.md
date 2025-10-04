@@ -39,6 +39,7 @@ This application has been completely modernized from a monolithic HTML structure
 - 🛡️ **Role-based Access Control** - Compliance and Service Role authentication
 - 📊 **Real-time Dashboard** - Live monitoring of persona flags and audit logs
 - 🔐 **Security & Compliance** - Row Level Security (RLS) and immutable audit records
+- 🏛️ **Ownership Audit System** - FactorA Universal Ownership & Attribution Mandate enforcement
 - 📱 **Responsive Design** - Mobile-first approach with modern UI components
 - ⚡ **Performance Optimized** - Code splitting, lazy loading, and PWA support
 - ♿ **Accessibility** - WCAG 2.1 AA compliance foundation
@@ -129,6 +130,25 @@ The application uses a comprehensive design system built with Tailwind CSS:
 - **Immutable Records**: Complete audit history preservation
 - **Real-time Monitoring**: Live tracking of all changes
 - **Compliance Ready**: Retention and regulatory compliance
+
+### Ownership Audit System
+The application implements the **FactorA Universal Ownership & Attribution Mandate** to ensure data sovereignty:
+
+- **Schema-level Enforcement**: Every operational record anchored to `profiles.user_id`
+- **Automated Detection**: CI/CD pipeline detects orphaned records
+- **Immutable Logging**: All ownership changes permanently logged
+- **Fail-fast Compliance**: Pipeline fails if orphans detected
+
+**Quick Start:**
+1. See [`docs/OWNERSHIP_AUDIT_QUICKSTART.md`](docs/OWNERSHIP_AUDIT_QUICKSTART.md) for setup
+2. Configure `DATABASE_URL` secret in GitHub repository settings
+3. Workflow runs automatically on push to `main`
+4. Review artifacts if orphans detected
+
+**Detailed Documentation:**
+- [`MANDATE.md`](MANDATE.md) - Complete specification
+- [`db/ownership/README.md`](db/ownership/README.md) - Technical details
+- [`scripts/test-ownership-audit.sh`](scripts/test-ownership-audit.sh) - Test suite
 
 ## 🚀 Performance
 
