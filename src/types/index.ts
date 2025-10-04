@@ -369,3 +369,204 @@ export interface CreditScoringFeatures {
   micro_active: boolean;        // Has active microcredit
   micro_active_sum: number;     // Sum of active microcredits
 }
+
+// ============================================================================
+// COMPLIANCE SHOWCASE TYPES
+// ============================================================================
+
+// Risk Signals and Events
+export interface RiskEvent {
+  id: string;
+  owner_id: string;
+  owner_ref?: string;           // Anonymized reference for public API
+  source: 'RiskSeal' | 'DeviceFingerprint' | 'BehavioralAnalytics' | 'IdentityVerification';
+  event_type: string;
+  signal_payload: Record<string, any>;
+  confidence: number;           // 0-1
+  observed_at: string;          // ISO 8601
+  created_at: string;
+  signal_summary?: {            // For public API
+    signal_type: string;
+    confidence: number;
+    timestamp: string;
+  };
+}
+
+export interface RiskFactor {
+  id: string;
+  owner_id: string;
+  owner_ref?: string;           // Anonymized reference for public API
+  factor_code: string;
+  factor_value: number | null;
+  factor_text?: string;
+  confidence: number;           // 0-1
+  derived_at: string;           // ISO 8601
+  source_event_id?: string;
+  signal_source?: string;       // e.g., "RiskSeal"
+  signal_type?: string;         // e.g., "device_consistency_check"
+  metadata?: Record<string, any>;
+  created_at: string;
+}
+
+// Alternate Credit Scoring
+export interface AltScoreRun {
+  id: string;
+  owner_id: string;
+  owner_ref?: string;           // Anonymized reference
+  persona_id?: string;
+  model_version: string;
+  input_refs: Record<string, any>;
+  run_id: string;               // Human-readable ID like "ALT-RUN-20240115-XYZ789"
+  started_at: string;
+  finished_at: string | null;
+  status: 'running' | 'completed' | 'failed' | 'cancelled';
+  score_result: number | null;
+  risk_band: string | null;
+  explanation?: AltScoreExplanation;
+  error_message?: string;
+  created_at: string;
+}
+
+export interface AltScoreExplanation {
+  factors: AltScoreFactor[];
+  methodology: string;
+  mitigations?: string[];
+}
+
+export interface AltScoreFactor {
+  factor: string;
+  weight: number;
+  value: number;
+  contribution: number;
+  confidence: number;
+  source?: string;
+}
+
+// Demo Cohort
+export interface DemoPersona {
+  user_id: string;
+  owner_ref: string;            // Anonymized reference
+  persona_type: 'thin_file' | 'traditional' | 'mixed' | 'new_borrower';
+  display_name: string;
+  scenario_description: string;
+  active: boolean;
+  created_at: string;
+}
+
+// Public API Response Types
+export interface IntegrityStatus {
+  orphan_records: number;       // Should always be 0
+  latest_run_id: string;        // e.g., "RUN-20240115-ABCD1234"
+  audit_entries_30d: number;
+  rls_status: 'ENFORCED' | 'DISABLED';
+  last_verification: string;    // ISO 8601
+  tables_checked: number;
+}
+
+export interface ScoreModel {
+  id: string;
+  name: string;
+  version: string;
+  description: string;
+  factors_count: number;
+  active: boolean;
+  created_at: string;
+}
+
+export interface PublicScoreRun {
+  id: string;
+  persona_ref: string;
+  model_id: string;
+  score: number;
+  risk_band: {
+    band: string;
+    min_score: number;
+    max_score: number;
+    recommendation: string;
+  };
+  features?: Record<string, number>;
+  normalized_score: number;
+  computed_at: string;
+  audit_log_id: string | null;
+}
+
+export interface AuditSummary {
+  total_score_runs: number;
+  runs_last_30d: number;
+  latest_run_timestamp: string | null;
+  unique_personas: number;
+  rls_status: 'ENFORCED' | 'DISABLED';
+}
+
+// API Response Wrapper
+export interface APIResponse<T> {
+  success: boolean;
+  data: T;
+  metadata?: {
+    count?: number;
+    page?: number;
+    per_page?: number;
+    total?: number;
+    limit?: number;
+    offset?: number;
+  };
+  timestamp: string;            // ISO 8601
+}
+
+export interface APIError {
+  success: false;
+  error: string;
+  error_code?: string;
+  details?: string;
+  retry_after?: number;
+  timestamp: string;
+}
+
+// Alternate Score Report (for download)
+export interface AltScoreReport {
+  header: {
+    run_id: string;
+    model_version: string;
+    generated_at: string;
+    persona_ref: string;
+  };
+  scores: {
+    primary_score: number | null;
+    alternate_score: number;
+    band: string;
+    eligibility: string;
+  };
+  factor_contributions: AltScoreFactor[];
+  risk_mitigations?: string[];
+  integrity: {
+    hash: string;
+    audit_link: string;
+  };
+}
+
+// Sandbox Simulation Types
+export interface SandboxInput {
+  monthly_income: number;
+  transaction_count_3m: number;
+  remittance_frequency: 'weekly' | 'monthly' | 'quarterly' | 'rare';
+  microcredit_repayment_rate: number;  // 0-1
+  risk_signals: {
+    device_consistency: number;         // 0-1
+    identity_confidence: number;        // 0-1
+  };
+}
+
+export interface SandboxOutput {
+  score: number;
+  band: string;
+  explanation: {
+    factors_used: number;
+    highest_contribution: string;
+    risk_mitigations: string[];
+  };
+  lineage: {
+    model_version: string;
+    calculation_timestamp: string;
+    policy_view: string;
+  };
+}
