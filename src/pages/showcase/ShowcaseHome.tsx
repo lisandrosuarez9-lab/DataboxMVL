@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui';
 import { IntegrityStatus } from '@/types';
 
@@ -7,6 +8,7 @@ import { IntegrityStatus } from '@/types';
  * Displays live integrity metrics and system status
  */
 const ShowcaseHome: React.FC = () => {
+  const navigate = useNavigate();
   const [integrityStatus, setIntegrityStatus] = useState<IntegrityStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -230,18 +232,27 @@ const ShowcaseHome: React.FC = () => {
           No data leaves your browser.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button className="px-8 py-3 bg-white text-brand-primary font-semibold rounded-lg hover:bg-gray-100 transition-colors">
+          <button 
+            onClick={() => navigate('/showcase/sandbox')}
+            className="px-8 py-3 bg-white text-brand-primary font-semibold rounded-lg hover:bg-gray-100 transition-colors"
+          >
             Try the Sandbox →
           </button>
-          <button className="px-8 py-3 bg-brand-secondary text-white font-semibold rounded-lg hover:bg-opacity-90 transition-colors border-2 border-white">
-            View Documentation
+          <button 
+            onClick={() => navigate('/showcase/credit-structure')}
+            className="px-8 py-3 bg-brand-secondary text-white font-semibold rounded-lg hover:bg-opacity-90 transition-colors border-2 border-white"
+          >
+            View Credit Structure
           </button>
         </div>
       </Card>
 
       {/* Navigation to Other Pages */}
       <div className="grid md:grid-cols-3 gap-6">
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+        <Card 
+          className="hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={() => navigate('/showcase/credit-structure')}
+        >
           <div className="text-center space-y-4">
             <div className="text-5xl">📊</div>
             <h3 className="text-xl font-semibold text-gray-900">
@@ -256,7 +267,10 @@ const ShowcaseHome: React.FC = () => {
           </div>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+        <Card 
+          className="hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={() => navigate('/showcase/riskseal')}
+        >
           <div className="text-center space-y-4">
             <div className="text-5xl">🔐</div>
             <h3 className="text-xl font-semibold text-gray-900">
@@ -271,7 +285,10 @@ const ShowcaseHome: React.FC = () => {
           </div>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+        <Card 
+          className="hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={() => navigate('/showcase/compliance')}
+        >
           <div className="text-center space-y-4">
             <div className="text-5xl">📋</div>
             <h3 className="text-xl font-semibold text-gray-900">
@@ -282,6 +299,45 @@ const ShowcaseHome: React.FC = () => {
             </p>
             <button className="text-brand-primary font-semibold hover:underline">
               View Audits →
+            </button>
+          </div>
+        </Card>
+      </div>
+
+      {/* Additional Showcase Pages */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card 
+          className="hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={() => navigate('/showcase/alternate-scoring')}
+        >
+          <div className="text-center space-y-4">
+            <div className="text-5xl">💳</div>
+            <h3 className="text-xl font-semibold text-gray-900">
+              Alternate Credit Scoring
+            </h3>
+            <p className="text-gray-600">
+              See thin-file scoring reports with full explainability and download options
+            </p>
+            <button className="text-brand-primary font-semibold hover:underline">
+              View Reports →
+            </button>
+          </div>
+        </Card>
+
+        <Card 
+          className="hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={() => navigate('/showcase/sandbox')}
+        >
+          <div className="text-center space-y-4">
+            <div className="text-5xl">🧪</div>
+            <h3 className="text-xl font-semibold text-gray-900">
+              Interactive Sandbox
+            </h3>
+            <p className="text-gray-600">
+              Run safe, client-side credit score simulations with your own parameters
+            </p>
+            <button className="text-brand-primary font-semibold hover:underline">
+              Try Sandbox →
             </button>
           </div>
         </Card>
