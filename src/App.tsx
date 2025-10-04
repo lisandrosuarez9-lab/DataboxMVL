@@ -9,6 +9,12 @@ import DashboardPage from '@/pages/DashboardPage';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { DiagnosticsDashboard } from '@/components/DiagnosticsDashboard';
+import ShowcaseHome from '@/pages/showcase/ShowcaseHome';
+import CreditStructure from '@/pages/showcase/CreditStructure';
+import RiskSealIntegration from '@/pages/showcase/RiskSealIntegration';
+import AlternateScoring from '@/pages/showcase/AlternateScoring';
+import Sandbox from '@/pages/showcase/Sandbox';
+import ComplianceAudits from '@/pages/showcase/ComplianceAudits';
 import '@/styles/globals.css';
 
 const App: React.FC = () => {
@@ -61,6 +67,43 @@ const App: React.FC = () => {
                   </div>
                 </Layout>
               </ProtectedRoute>
+            } />
+            
+            {/* Showcase Routes - Public */}
+            <Route path="/showcase" element={
+              <Layout>
+                <ShowcaseHome />
+              </Layout>
+            } />
+            
+            <Route path="/showcase/credit-structure" element={
+              <Layout>
+                <CreditStructure />
+              </Layout>
+            } />
+            
+            <Route path="/showcase/riskseal" element={
+              <Layout>
+                <RiskSealIntegration />
+              </Layout>
+            } />
+            
+            <Route path="/showcase/alternate-scoring" element={
+              <Layout>
+                <AlternateScoring />
+              </Layout>
+            } />
+            
+            <Route path="/showcase/sandbox" element={
+              <Layout>
+                <Sandbox />
+              </Layout>
+            } />
+            
+            <Route path="/showcase/compliance" element={
+              <Layout>
+                <ComplianceAudits />
+              </Layout>
             } />
             
             {/* Catch all route */}
