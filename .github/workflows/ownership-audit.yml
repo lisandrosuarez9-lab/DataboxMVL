@@ -1,0 +1,224 @@
+name: Ownership Audit
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+
+jobs:
+  ownership-audit:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client uuid-runtime
+
+      - name: Set RUN_ID
+        id: run_id
+        run: |
+          RUN_ID="GHA_${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}_$(date +%Y%m%d_%H%M%S)"
+          echo "run_id=${RUN_ID}" >> $GITHUB_OUTPUT
+          echo "RUN_ID=${RUN_ID}" >> $GITHUB_ENV
+          echo "Generated RUN_ID: ${RUN_ID}"
+
+      - name: Verify DATABASE_URL secret
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "❌ ERROR: DATABASE_URL secret is not set"
+            echo ""
+            echo "Please configure DATABASE_URL in:"
+            echo "  GitHub → Repository → Settings → Secrets → Actions"
+            echo ""
+            echo "The secret should contain your PostgreSQL connection string:"
+            echo "  postgresql://user:password@host:port/database"
+            exit 1
+          else
+            echo "✓ DATABASE_URL secret is configured"
+          fi
+
+      - name: Test database connectivity
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "Testing database connection..."
+          if timeout 30 psql "$DATABASE_URL" -c '\q' 2>/dev/null; then
+            echo "✓ Database connection successful"
+          else
+            echo "❌ Failed to connect to database"
+            echo "Please verify:"
+            echo "  1. DATABASE_URL is correctly formatted"
+            echo "  2. Database is accessible from GitHub Actions"
+            echo "  3. Network/firewall rules allow connections"
+            exit 1
+          fi
+
+      - name: Run ownership audit
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RUN_ID: ${{ steps.run_id.outputs.run_id }}
+        run: |
+          echo "Starting ownership audit with RUN_ID: ${RUN_ID}"
+          echo ""
+          
+          # Create temporary directory for artifacts
+          mkdir -p /tmp/ownership_audit
+          
+          # Run the complete audit
+          psql "$DATABASE_URL" \
+            -v ON_ERROR_STOP=1 \
+            -v run_id="${RUN_ID}" \
+            -f db/ownership/run_ownership_audit.sql \
+            2>&1 | tee /tmp/ownership_audit/audit_log.txt
+          
+          # Check exit status
+          EXIT_CODE=${PIPESTATUS[0]}
+          
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo ""
+            echo "✓ Ownership audit completed successfully"
+            echo "STATUS=PASSED" >> $GITHUB_ENV
+          else
+            echo ""
+            echo "✗ Ownership audit failed"
+            echo "STATUS=FAILED" >> $GITHUB_ENV
+            # Don't exit yet - we want to upload artifacts first
+          fi
+
+      - name: Collect artifacts
+        if: always()
+        run: |
+          echo "Collecting audit artifacts..."
+          
+          # Create artifacts directory
+          mkdir -p artifacts
+          
+          # Copy generated artifacts
+          if [ -f /tmp/run_id.txt ]; then
+            cp /tmp/run_id.txt artifacts/
+            echo "✓ run_id.txt collected"
+          else
+            echo "${{ steps.run_id.outputs.run_id }}" > artifacts/run_id.txt
+            echo "⚠ run_id.txt created from environment"
+          fi
+          
+          if [ -f /tmp/ownership_audit_summary.csv ]; then
+            cp /tmp/ownership_audit_summary.csv artifacts/
+            echo "✓ ownership_audit_summary.csv collected"
+          else
+            echo "⚠ ownership_audit_summary.csv not found"
+          fi
+          
+          if [ -f /tmp/ownership_audit_summary.json ]; then
+            cp /tmp/ownership_audit_summary.json artifacts/
+            echo "✓ ownership_audit_summary.json collected"
+          else
+            echo "⚠ ownership_audit_summary.json not found"
+          fi
+          
+          if [ -f /tmp/ownership_audit/audit_log.txt ]; then
+            cp /tmp/ownership_audit/audit_log.txt artifacts/
+            echo "✓ audit_log.txt collected"
+          fi
+          
+          # Generate summary report
+          cat > artifacts/summary.md << 'EOF'
+          # Ownership Audit Summary
+          
+          **Run ID:** ${{ steps.run_id.outputs.run_id }}  
+          **Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")  
+          **Status:** ${STATUS}  
+          **Workflow:** ${{ github.workflow }}  
+          **Run Number:** ${{ github.run_number }}  
+          **Trigger:** ${{ github.event_name }}  
+          
+          ## Artifacts
+          
+          - `run_id.txt` - Unique identifier for this audit run
+          - `ownership_audit_summary.csv` - Table-by-table orphan counts
+          - `ownership_audit_summary.json` - Same data in JSON format
+          - `audit_log.txt` - Complete audit execution log
+          
+          ## Next Steps
+          
+          EOF
+          
+          if [ "${STATUS}" = "FAILED" ]; then
+            cat >> artifacts/summary.md << 'EOF'
+          **⚠️ ACTION REQUIRED**
+          
+          Orphaned records were detected. Please:
+          1. Review the CSV/JSON artifacts to identify affected tables
+          2. Investigate the orphaned records
+          3. Manually attribute ownership using the universal_attribution_log table
+          4. Re-run this workflow to verify compliance
+          EOF
+          else
+            cat >> artifacts/summary.md << 'EOF'
+          **✓ All tables compliant**
+          
+          No orphaned records detected. All operational tables have valid ownership.
+          EOF
+          fi
+          
+          echo ""
+          echo "Artifacts ready in ./artifacts/"
+          ls -lah artifacts/
+
+      - name: Upload audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ownership-audit-${{ steps.run_id.outputs.run_id }}
+          path: artifacts/
+          retention-days: 90
+
+      - name: Display summary
+        if: always()
+        run: |
+          echo ""
+          echo "╔════════════════════════════════════════════════════════════╗"
+          echo "║  Ownership Audit Summary                                   ║"
+          echo "╚════════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "RUN_ID: ${{ steps.run_id.outputs.run_id }}"
+          echo "Status: ${STATUS}"
+          echo ""
+          
+          if [ -f artifacts/ownership_audit_summary.csv ]; then
+            echo "Orphan counts by table:"
+            echo "----------------------"
+            cat artifacts/ownership_audit_summary.csv
+            echo ""
+          fi
+          
+          if [ "${STATUS}" = "FAILED" ]; then
+            echo "❌ AUDIT FAILED: Orphaned records detected"
+            echo ""
+            echo "Download artifacts to review details:"
+            echo "  GitHub → Actions → This workflow run → Artifacts"
+          else
+            echo "✅ AUDIT PASSED: All tables compliant"
+          fi
+
+      - name: Fail workflow if orphans detected
+        if: env.STATUS == 'FAILED'
+        run: |
+          echo "::error::Ownership audit failed - orphaned records detected"
+          exit 1
+
+      - name: Success notification
+        if: env.STATUS == 'PASSED'
+        run: |
+          echo "::notice::Ownership audit passed - all tables have valid ownership"
