@@ -92,6 +92,7 @@ dist
 # Temporary folders
 tmp/
 temp/
+artifacts/
 
 # Logs
 logs
