@@ -39,7 +39,26 @@ check_file() {
 
 # Check key files
 check_file "index.html"
-check_file "assets/index.js" || check_file "assets/index-*.js" || echo "    (JS bundle may have hash)"
+
+# Check for JS bundle (may have hash)
+echo -n "  Checking for JS bundle... "
+if ls dist/assets/index-*.js 1> /dev/null 2>&1; then
+  echo "✅"
+  PASSED=$((PASSED + 1))
+else
+  echo "❌"
+  FAILED=$((FAILED + 1))
+fi
+
+# Check for CSS bundle (may have hash)
+echo -n "  Checking for CSS bundle... "
+if ls dist/assets/index-*.css 1> /dev/null 2>&1; then
+  echo "✅"
+  PASSED=$((PASSED + 1))
+else
+  echo "❌"
+  FAILED=$((FAILED + 1))
+fi
 
 # Count total files in dist
 FILE_COUNT=$(find dist -type f | wc -l)
