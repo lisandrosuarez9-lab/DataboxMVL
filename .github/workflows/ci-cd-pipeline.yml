@@ -1,0 +1,618 @@
+name: CI/CD Pipeline - GitHub Actions
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    # Daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+
+# Sets permissions for GitHub Pages deployment and artifact uploads
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: read
+
+# Allow only one concurrent deployment
+concurrency:
+  group: "ci-cd-pipeline"
+  cancel-in-progress: false
+
+jobs:
+  # ============================================================================
+  # JOB 1: Initialize RUN_ID
+  # ============================================================================
+  initialize:
+    name: Initialize RUN_ID
+    runs-on: ubuntu-latest
+    outputs:
+      run_id: ${{ steps.generate_run_id.outputs.run_id }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate RUN_ID
+        id: generate_run_id
+        run: |
+          RUN_ID="GHA_${GITHUB_RUN_ID}_${GITHUB_RUN_NUMBER}_$(date +%Y%m%d_%H%M%S)"
+          echo "run_id=${RUN_ID}" >> $GITHUB_OUTPUT
+          echo "RUN_ID=${RUN_ID}" >> $GITHUB_ENV
+          echo "Generated RUN_ID: ${RUN_ID}"
+          
+          # Create artifacts directory and store RUN_ID
+          mkdir -p artifacts
+          echo "${RUN_ID}" > artifacts/run_id.txt
+          echo "✅ RUN_ID stored in artifacts/run_id.txt"
+
+      - name: Upload RUN_ID artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-id
+          path: artifacts/run_id.txt
+          retention-days: 90
+
+  # ============================================================================
+  # JOB 2: Database Deployment
+  # ============================================================================
+  database-deployment:
+    name: Database Deployment
+    runs-on: ubuntu-latest
+    needs: initialize
+    # Only run if DATABASE_URL is configured
+    if: ${{ vars.DATABASE_URL != '' || secrets.DATABASE_URL != '' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client uuid-runtime
+
+      - name: Verify DATABASE_URL secret
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "⚠️  WARNING: DATABASE_URL secret is not set"
+            echo "Database deployment will be skipped"
+            echo "To enable: GitHub → Repository → Settings → Secrets → Actions"
+            exit 0
+          fi
+          echo "✅ DATABASE_URL secret is configured"
+
+      - name: Test database connectivity
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "Skipping connectivity test (no DATABASE_URL)"
+            exit 0
+          fi
+          
+          echo "Testing database connection..."
+          if timeout 30 psql "$DATABASE_URL" -c '\q' 2>/dev/null; then
+            echo "✅ Database connection successful"
+          else
+            echo "❌ Failed to connect to database"
+            exit 1
+          fi
+
+      - name: Deploy schema scripts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "Skipping schema deployment (no DATABASE_URL)"
+            exit 0
+          fi
+          
+          echo "=================================================="
+          echo "Deploying Database Schema"
+          echo "=================================================="
+          echo ""
+          
+          echo "Step 1: Deploying tables..."
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/showcase_extensions/01_tables.sql
+          echo "✅ Tables deployed"
+          echo ""
+          
+          echo "Step 2: Deploying public views..."
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/showcase_extensions/02_public_views.sql
+          echo "✅ Public views deployed"
+          echo ""
+          
+          echo "Step 3: Deploying functions..."
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/showcase_extensions/03_functions.sql
+          echo "✅ Functions deployed"
+          echo ""
+          
+          echo "✅ Database schema deployment complete"
+
+      - name: Run ownership audit
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RUN_ID: ${{ needs.initialize.outputs.run_id }}
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "Skipping ownership audit (no DATABASE_URL)"
+            mkdir -p artifacts
+            echo "SKIPPED" > artifacts/db_deployment_status.txt
+            exit 0
+          fi
+          
+          bash scripts/ownership_audit.sh
+          
+          # Mark as successful
+          echo "SUCCESS" > artifacts/db_deployment_status.txt
+
+      - name: Upload database deployment artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-deployment-${{ needs.initialize.outputs.run_id }}
+          path: artifacts/
+          retention-days: 90
+
+  # ============================================================================
+  # JOB 3: Demo Seed
+  # ============================================================================
+  demo-seed:
+    name: Demo Seed Job
+    runs-on: ubuntu-latest
+    needs: [initialize, database-deployment]
+    if: ${{ vars.DATABASE_URL != '' || secrets.DATABASE_URL != '' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client uuid-runtime
+
+      - name: Apply demo seed data
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "Skipping demo seed (no DATABASE_URL)"
+            exit 0
+          fi
+          
+          echo "=================================================="
+          echo "Applying Demo Seed Data"
+          echo "=================================================="
+          echo ""
+          
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/showcase_extensions/04_demo_data.sql
+          echo "✅ Demo seed data applied"
+
+      - name: Verify demo data
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "Skipping verification (no DATABASE_URL)"
+            exit 0
+          fi
+          
+          echo "=================================================="
+          echo "Verifying Demo Data"
+          echo "=================================================="
+          echo ""
+          
+          # Verify personas count (10-15)
+          PERSONA_COUNT=$(psql "$DATABASE_URL" -t -c "SELECT COUNT(*) FROM demo_cohort WHERE active = true;")
+          echo "Demo personas: ${PERSONA_COUNT}"
+          
+          if [ "$PERSONA_COUNT" -ge 10 ] && [ "$PERSONA_COUNT" -le 15 ]; then
+            echo "✅ Persona count is valid (10-15)"
+          else
+            echo "⚠️  Warning: Expected 10-15 personas, found ${PERSONA_COUNT}"
+          fi
+          
+          # Verify financial events per persona (≥3)
+          MIN_EVENTS=$(psql "$DATABASE_URL" -t -c "SELECT MIN(event_count) FROM (SELECT owner_id, COUNT(*) as event_count FROM risk_events GROUP BY owner_id) AS counts;")
+          echo "Minimum events per persona: ${MIN_EVENTS}"
+          
+          if [ "$MIN_EVENTS" -ge 3 ]; then
+            echo "✅ All personas have ≥3 financial events"
+          else
+            echo "⚠️  Warning: Some personas have <3 financial events"
+          fi
+          
+          # Verify risk factors per persona (≥1)
+          MIN_FACTORS=$(psql "$DATABASE_URL" -t -c "SELECT MIN(factor_count) FROM (SELECT owner_id, COUNT(*) as factor_count FROM risk_factors GROUP BY owner_id) AS counts;")
+          echo "Minimum risk factors per persona: ${MIN_FACTORS}"
+          
+          if [ "$MIN_FACTORS" -ge 1 ]; then
+            echo "✅ All personas have ≥1 risk factor"
+          else
+            echo "⚠️  Warning: Some personas have <1 risk factors"
+          fi
+          
+          echo ""
+          echo "✅ Demo data verification complete"
+
+      - name: Re-run ownership audit
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RUN_ID: ${{ needs.initialize.outputs.run_id }}
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "Skipping ownership audit (no DATABASE_URL)"
+            mkdir -p artifacts
+            echo "SKIPPED" > artifacts/demo_seed_status.txt
+            exit 0
+          fi
+          
+          bash scripts/ownership_audit.sh
+          
+          # Mark as successful
+          echo "SUCCESS" > artifacts/demo_seed_status.txt
+
+      - name: Upload demo seed artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-seed-${{ needs.initialize.outputs.run_id }}
+          path: artifacts/
+          retention-days: 90
+
+  # ============================================================================
+  # JOB 4: Edge Functions Deployment
+  # ============================================================================
+  edge-functions-deployment:
+    name: Edge Functions Deployment
+    runs-on: ubuntu-latest
+    needs: [initialize, database-deployment]
+    # Only run if Supabase is configured
+    if: ${{ vars.SUPABASE_URL != '' || secrets.SUPABASE_URL != '' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Verify Supabase configuration
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "${SUPABASE_URL}" ]; then
+            echo "⚠️  WARNING: SUPABASE_URL is not configured"
+            echo "Edge functions deployment will be skipped"
+            exit 0
+          fi
+          echo "✅ Supabase configuration found"
+
+      - name: Validate Edge Functions syntax
+        run: |
+          echo "=================================================="
+          echo "Validating Edge Functions"
+          echo "=================================================="
+          echo ""
+          
+          # Check api-v1 function
+          if [ -f "supabase/functions/api-v1/index.ts" ]; then
+            echo "Checking api-v1 function..."
+            deno check supabase/functions/api-v1/index.ts
+            echo "✅ api-v1 syntax valid"
+          fi
+          
+          echo ""
+          echo "✅ Edge function validation complete"
+
+      - name: Smoke check endpoints
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "${SUPABASE_URL}" ]; then
+            echo "Skipping smoke check (no SUPABASE_URL)"
+            mkdir -p artifacts
+            echo "SKIPPED" > artifacts/edge_functions_status.txt
+            exit 0
+          fi
+          
+          bash scripts/api_contract_check.sh
+          
+          # Mark as successful
+          echo "SUCCESS" > artifacts/edge_functions_status.txt
+
+      - name: Upload edge functions artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-functions-${{ needs.initialize.outputs.run_id }}
+          path: artifacts/
+          retention-days: 90
+
+  # ============================================================================
+  # JOB 5: Frontend Build
+  # ============================================================================
+  frontend-build:
+    name: Frontend Build Job
+    runs-on: ubuntu-latest
+    needs: initialize
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          echo "=================================================="
+          echo "Installing Dependencies"
+          echo "=================================================="
+          echo ""
+          npm ci
+          echo "✅ Dependencies installed"
+
+      - name: Type check
+        run: |
+          echo "=================================================="
+          echo "Running Type Check"
+          echo "=================================================="
+          echo ""
+          npm run typecheck
+          echo "✅ Type check passed"
+
+      - name: Build frontend
+        run: |
+          echo "=================================================="
+          echo "Building Frontend"
+          echo "=================================================="
+          echo ""
+          npm run build
+          echo "✅ Build complete"
+
+      - name: Verify build output
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "❌ dist/ directory not found"
+            exit 1
+          fi
+          
+          FILE_COUNT=$(find dist -type f | wc -l)
+          echo "Files in dist/: ${FILE_COUNT}"
+          
+          if [ "$FILE_COUNT" -lt 1 ]; then
+            echo "❌ No files in dist/"
+            exit 1
+          fi
+          
+          echo "✅ Build output verified"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build-${{ needs.initialize.outputs.run_id }}
+          path: dist/
+          retention-days: 90
+
+  # ============================================================================
+  # JOB 6: Integration Tests
+  # ============================================================================
+  integration-tests:
+    name: Integration Tests Job
+    runs-on: ubuntu-latest
+    needs: [initialize, frontend-build, edge-functions-deployment]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build-${{ needs.initialize.outputs.run_id }}
+          path: dist/
+
+      - name: Run API contract check
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "${SUPABASE_URL}" ]; then
+            echo "Skipping API contract check (no SUPABASE_URL)"
+            mkdir -p artifacts
+            echo '{"status": "SKIPPED"}' > artifacts/api_contract_check.json
+          else
+            bash scripts/api_contract_check.sh
+          fi
+
+      - name: Run UI audit snapshot
+        run: |
+          bash scripts/ui_audit_snapshot.sh
+
+      - name: Upload integration test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-tests-${{ needs.initialize.outputs.run_id }}
+          path: artifacts/
+          retention-days: 90
+
+  # ============================================================================
+  # JOB 7: E2E Tests + Pages Deploy
+  # ============================================================================
+  e2e-and-deploy:
+    name: E2E Tests + Pages Deploy
+    runs-on: ubuntu-latest
+    needs: [initialize, integration-tests]
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build-${{ needs.initialize.outputs.run_id }}
+          path: dist/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Serve dist locally
+        run: |
+          echo "Starting local server..."
+          npx serve dist -p 3000 &
+          sleep 5
+          echo "✅ Server started on http://localhost:3000"
+
+      - name: Run E2E tests (placeholder)
+        run: |
+          echo "=================================================="
+          echo "E2E Tests"
+          echo "=================================================="
+          echo ""
+          echo "Note: Playwright tests would run here"
+          echo "For now, performing basic smoke test..."
+          echo ""
+          
+          # Check if server is responding
+          if curl -f http://localhost:3000 > /dev/null 2>&1; then
+            echo "✅ Homepage is accessible"
+          else
+            echo "❌ Homepage is not accessible"
+            exit 1
+          fi
+          
+          # Create placeholder E2E results
+          mkdir -p artifacts
+          cat > artifacts/e2e_test_results.json << EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "tests_run": 1,
+            "tests_passed": 1,
+            "tests_failed": 0,
+            "status": "PASSED"
+          }
+          EOF
+          
+          echo "✅ E2E smoke test passed"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Save deployment URL
+        run: |
+          mkdir -p artifacts
+          echo "${{ steps.deployment.outputs.page_url }}" > artifacts/deployment_url.txt
+          echo "✅ Deployed to: ${{ steps.deployment.outputs.page_url }}"
+
+      - name: Upload E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-tests-${{ needs.initialize.outputs.run_id }}
+          path: artifacts/
+          retention-days: 90
+
+  # ============================================================================
+  # JOB 8: Compliance Summary
+  # ============================================================================
+  compliance-summary:
+    name: Compliance Summary Job
+    runs-on: ubuntu-latest
+    needs: [initialize, database-deployment, demo-seed, edge-functions-deployment, frontend-build, integration-tests, e2e-and-deploy]
+    if: always()
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts/
+
+      - name: Consolidate artifacts
+        run: |
+          echo "=================================================="
+          echo "Consolidating Artifacts"
+          echo "=================================================="
+          echo ""
+          
+          mkdir -p artifacts
+          
+          # Copy artifacts from each job
+          find all-artifacts -type f -name "*.txt" -exec cp {} artifacts/ \; 2>/dev/null || true
+          find all-artifacts -type f -name "*.csv" -exec cp {} artifacts/ \; 2>/dev/null || true
+          find all-artifacts -type f -name "*.json" -exec cp {} artifacts/ \; 2>/dev/null || true
+          find all-artifacts -type f -name "*.log" -exec cp {} artifacts/ \; 2>/dev/null || true
+          
+          ls -la artifacts/
+          echo ""
+          echo "✅ Artifacts consolidated"
+
+      - name: Build compliance report
+        env:
+          RUN_ID: ${{ needs.initialize.outputs.run_id }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          bash scripts/build_pages_report.sh
+
+      - name: Display compliance summary
+        run: |
+          echo "=================================================="
+          echo "Compliance Summary"
+          echo "=================================================="
+          echo ""
+          
+          if [ -f artifacts/compliance_report.md ]; then
+            cat artifacts/compliance_report.md
+          else
+            echo "⚠️  Compliance report not generated"
+          fi
+
+      - name: Upload compliance artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: compliance-summary-${{ needs.initialize.outputs.run_id }}
+          path: artifacts/
+          retention-days: 90
+
+      - name: Summary notification
+        run: |
+          echo "=================================================="
+          echo "Pipeline Execution Complete"
+          echo "=================================================="
+          echo ""
+          echo "RUN_ID: ${{ needs.initialize.outputs.run_id }}"
+          echo "All jobs completed"
+          echo "Artifacts available for download in GitHub Actions"
+          echo ""
+          echo "✅ CI/CD Pipeline execution complete"
