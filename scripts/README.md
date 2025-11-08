@@ -109,6 +109,43 @@ node scripts/phase1-smoke-test.mjs --help
 
 ---
 
+### `validate-jwk.mjs`
+
+Validates an Ed25519 JWK for correctness. Useful for testing generated keys before deploying.
+
+**Usage:**
+```bash
+npm run validate-jwk -- '<jwk-string>'
+# or
+node scripts/validate-jwk.mjs '<jwk-string>'
+```
+
+**Arguments:**
+- `jwk-string` - JSON string of the JWK to validate
+
+**Validates:**
+- JSON format correctness
+- Required JWK fields (kty, crv, x, kid)
+- Ed25519 algorithm parameters
+- Key import capability
+- Signing/verification capability (if private key)
+
+**Example:**
+```bash
+# Validate a generated key
+KEY=$(node scripts/generate-ed25519-jwk.mjs 2>/dev/null | grep "SCORE_BROKER_ED25519_JWK=" | grep -v "^#" | head -1 | cut -d"'" -f2)
+npm run validate-jwk -- "$KEY"
+
+# Show help
+node scripts/validate-jwk.mjs --help
+```
+
+**Exit Codes:**
+- `0` - JWK is valid
+- `1` - JWK is invalid
+
+---
+
 ## CI/CD Helper Scripts
 
 ### `ownership_audit.sh`

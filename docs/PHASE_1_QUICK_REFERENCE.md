@@ -54,6 +54,7 @@ Expected output: `✅ Phase 1 Smoke Test PASSED`
 |--------|---------|
 | Generate keys | `npm run generate-jwk` |
 | Rotate keys | `npm run rotate-key` |
+| Validate key | `npm run validate-jwk -- '<jwk>'` |
 | Smoke test | `npm run phase1:smoke-test` |
 | Check logs | `supabase functions logs score-broker` |
 | List secrets | `supabase secrets list` |

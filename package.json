@@ -23,6 +23,7 @@
     "launch-agent:verbose": "node scripts/launch-agent.cjs --verbose",
     "generate-jwk": "node scripts/generate-ed25519-jwk.mjs",
     "rotate-key": "node scripts/rotate-ed25519-key.mjs",
+    "validate-jwk": "node scripts/validate-jwk.mjs",
     "phase1:smoke-test": "node scripts/phase1-smoke-test.mjs"
   },
   "dependencies": {
