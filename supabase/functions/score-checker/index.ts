@@ -53,12 +53,43 @@ function log(level: string, event: string, metadata: Record<string, any> = {}) {
 // Load EdDSA public key from Supabase secret
 async function loadPublicKey(): Promise<jose.KeyLike> {
   try {
-    // Try to load dedicated public key first
-    let jwkJson = Deno.env.get('SCORE_CHECKER_ED25519_PUBLIC_JWK');
+    // Prefer base64-encoded public JWK (Windows PowerShell safe)
+    let jwkJson = Deno.env.get('SCORE_CHECKER_ED25519_PUBLIC_JWK_B64');
     
-    // Fallback to private key JWK (contains public key data)
-    if (!jwkJson) {
-      jwkJson = Deno.env.get('SCORE_BROKER_ED25519_JWK');
+    if (jwkJson) {
+      // Decode from base64
+      try {
+        jwkJson = atob(jwkJson);
+      } catch (e) {
+        log('ERROR', 'key_load_failed', {
+          error_message: 'Failed to decode base64 public JWK',
+          error_type: 'key_configuration'
+        });
+        throw new Error('Failed to decode base64 verification key');
+      }
+    } else {
+      // Fallback to raw JSON string (public key)
+      jwkJson = Deno.env.get('SCORE_CHECKER_ED25519_PUBLIC_JWK');
+      
+      // Further fallback to broker private key (contains public key data) for compatibility
+      if (!jwkJson) {
+        jwkJson = Deno.env.get('SCORE_BROKER_ED25519_JWK_B64');
+        if (jwkJson) {
+          // Decode from base64
+          try {
+            jwkJson = atob(jwkJson);
+          } catch (e) {
+            log('ERROR', 'key_load_failed', {
+              error_message: 'Failed to decode base64 broker JWK',
+              error_type: 'key_configuration'
+            });
+            throw new Error('Failed to decode base64 verification key');
+          }
+        } else {
+          // Last fallback to raw broker private key
+          jwkJson = Deno.env.get('SCORE_BROKER_ED25519_JWK');
+        }
+      }
     }
     
     if (!jwkJson) {
