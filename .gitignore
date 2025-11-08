@@ -107,3 +107,8 @@ sw.js
 sw.js.map
 workbox-*.js
 workbox-*.js.mapartifacts/
+
+# Supabase temp & local secrets
+supabase/.temp/
+supabase/secrets/
+
