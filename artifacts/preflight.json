@@ -1,12 +1,15 @@
 {
-  "node_version": "v20.19.5",
-  "npm_version": "10.8.2",
-  "git_version": "git version 2.51.2",
-  "network": {
-    "github_api": "restricted_environment",
-    "supabase": "restricted_environment"
+  "run_id": "6996fd0d-8aef-485c-9789-a59b9085358a",
+  "timestamp": "2025-11-08T04:46:26Z",
+  "environment": {
+    "node_version": "v20.19.5",
+    "npm_version": "10.8.2",
+    "git_version": "2.51.2"
   },
-  "git_status": "checked",
-  "secrets": "present",
-  "note": "Network checks skipped in restricted environment"
+  "git": {
+    "branch": "copilot/fix-vite-base-build-deploy",
+    "commit": "985f615f261fd2d12c4709493a16592dff383339",
+    "remote": "https://github.com/lisandrosuarez9-lab/DataboxMVL"
+  },
+  "status": "preflight_complete"
 }

@@ -1,0 +1,11 @@
+Note: Network access restricted in sandboxed environment.
+This artifact should contain the fetched site index from:
+https://lisandrosuarez9-lab.github.io/DataboxMVL/
+
+To fetch after deployment, run:
+curl -s 'https://lisandrosuarez9-lab.github.io/DataboxMVL/' -o artifacts/site-index.html
+
+Expected checks:
+- Contains /DataboxMVL/assets/ references
+- Contains proper meta tags
+- Loads without 404 errors

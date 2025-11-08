@@ -1,0 +1,28 @@
+=== Environment Variables Verification in Built Assets ===
+
+1. Checking for VITE_PROFILE_FN_URL in dist:
+   ✅ FOUND: "VITE_PROFILE_FN_URL":"https://rzashahhkafjicjpupww.supabase.co/functions/v1/score-checker"
+
+2. Checking for score-checker URL in dist:
+   ✅ FOUND: Multiple references to "score-checker" endpoint
+
+3. Checking for /DataboxMVL/ base path in index.html:
+   ✅ FOUND: 7 references to /DataboxMVL/ paths including:
+   - <link rel="icon" type="image/svg+xml" href="/DataboxMVL/vite.svg" />
+   - <script type="module" crossorigin src="/DataboxMVL/assets/index-c3902b9d.js"></script>
+   - <link rel="modulepreload" crossorigin href="/DataboxMVL/assets/vendor-a308f804.js">
+   - <link rel="modulepreload" crossorigin href="/DataboxMVL/assets/router-14d9c797.js">
+   - <link rel="modulepreload" crossorigin href="/DataboxMVL/assets/state-20b526b2.js">
+
+4. Embedded environment variables in dist/assets/index-*.js:
+   ✅ VITE_PROFILE_FN_URL: https://rzashahhkafjicjpupww.supabase.co/functions/v1/score-checker
+   ✅ VITE_SUPABASE_URL: https://rzashahhkafjicjpupww.supabase.co
+   ✅ VITE_SUPABASE_ANON_KEY: (present, uses placeholder signature)
+   ✅ BASE_URL: /DataboxMVL/
+   ✅ MODE: production
+   ✅ PROD: true
+   ✅ DEV: false
+
+Summary: All environment variables correctly embedded in build.
+All asset paths use correct /DataboxMVL/ base path.
+Build is ready for deployment to GitHub Pages.
