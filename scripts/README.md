@@ -2,6 +2,150 @@
 
 This directory contains automation scripts for the CI/CD pipeline and development workflow.
 
+## Phase 1 Operator Scripts
+
+### `generate-ed25519-jwk.mjs`
+
+Generates a new Ed25519 keypair as JWK for Phase 1 JWT token signing.
+
+**Usage:**
+```bash
+npm run generate-jwk
+# or
+node scripts/generate-ed25519-jwk.mjs [kid]
+```
+
+**Arguments:**
+- `kid` - Optional key ID (default: score-broker-ed25519-v1)
+
+**Outputs:**
+- `SCORE_BROKER_ED25519_JWK` - Private key for token signing
+- `SCORE_CHECKER_ED25519_PUBLIC_JWK` - Public key for token verification
+
+**Example:**
+```bash
+# Generate with default kid
+npm run generate-jwk
+
+# Generate with custom kid
+node scripts/generate-ed25519-jwk.mjs score-broker-ed25519-v2
+
+# Show help
+node scripts/generate-ed25519-jwk.mjs --help
+```
+
+---
+
+### `rotate-ed25519-key.mjs`
+
+Generates a new Ed25519 keypair with custom kid for key rotation.
+
+**Usage:**
+```bash
+npm run rotate-key
+# or
+npm run rotate-key -- score-broker-ed25519-v2
+# or
+node scripts/rotate-ed25519-key.mjs [kid]
+```
+
+**Arguments:**
+- `kid` - Optional key ID (default: score-broker-ed25519-{timestamp})
+
+**Key Rotation Process:**
+1. Generate new keypair with this script
+2. Add new keys to Supabase (keep old keys)
+3. Update functions to use new kid
+4. Deploy and verify
+5. Remove old keys
+
+**Example:**
+```bash
+# Generate with timestamp kid
+npm run rotate-key
+
+# Generate with specific version
+npm run rotate-key -- score-broker-ed25519-v2
+
+# Show help
+node scripts/rotate-ed25519-key.mjs --help
+```
+
+---
+
+### `phase1-smoke-test.mjs`
+
+Smoke test for Phase 1 JWT token flow. Tests token generation, verification, and replay protection.
+
+**Usage:**
+```bash
+export SUPABASE_URL="https://your-project.supabase.co"
+npm run phase1:smoke-test
+# or
+node scripts/phase1-smoke-test.mjs
+```
+
+**Environment Variables:**
+- `SUPABASE_URL` - Your Supabase project URL (required)
+
+**Tests:**
+1. Token generation (score-broker)
+2. Token verification (score-checker)
+3. Replay protection (nonce tracking)
+
+**Exit Codes:**
+- `0` - All tests passed
+- `1` - One or more tests failed
+
+**Example:**
+```bash
+# Run smoke test
+export SUPABASE_URL="https://your-project.supabase.co"
+npm run phase1:smoke-test
+
+# Show help
+node scripts/phase1-smoke-test.mjs --help
+```
+
+---
+
+### `validate-jwk.mjs`
+
+Validates an Ed25519 JWK for correctness. Useful for testing generated keys before deploying.
+
+**Usage:**
+```bash
+npm run validate-jwk -- '<jwk-string>'
+# or
+node scripts/validate-jwk.mjs '<jwk-string>'
+```
+
+**Arguments:**
+- `jwk-string` - JSON string of the JWK to validate
+
+**Validates:**
+- JSON format correctness
+- Required JWK fields (kty, crv, x, kid)
+- Ed25519 algorithm parameters
+- Key import capability
+- Signing/verification capability (if private key)
+
+**Example:**
+```bash
+# Validate a generated key
+KEY=$(node scripts/generate-ed25519-jwk.mjs 2>/dev/null | grep "SCORE_BROKER_ED25519_JWK=" | grep -v "^#" | head -1 | cut -d"'" -f2)
+npm run validate-jwk -- "$KEY"
+
+# Show help
+node scripts/validate-jwk.mjs --help
+```
+
+**Exit Codes:**
+- `0` - JWK is valid
+- `1` - JWK is invalid
+
+---
+
 ## CI/CD Helper Scripts
 
 ### `ownership_audit.sh`
