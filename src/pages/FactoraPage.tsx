@@ -54,9 +54,19 @@ export const FactoraPage: React.FC = () => {
       return;
     }
 
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 
+      import.meta.env.NEXT_PUBLIC_SUPABASE_URL ||
+      'https://rzashahhkafjicjpupww.supabase.co';
+
     const scoreCheckerUrl = import.meta.env.VITE_PROFILE_FN_URL || 
       import.meta.env.VITE_SCORE_CHECKER_URL ||
-      'https://rzashahhkafjicjpupww.supabase.co/functions/v1/score-checker';
+      `${supabaseUrl}/functions/v1/score-checker`;
+
+    const scoreBrokerUrl = `${supabaseUrl}/functions/v1/score-broker`;
+
+    const scoreMode = import.meta.env.VITE_SCORE_MODE || 'demo';
+
+    console.log(`[FactoraPage] Score mode: ${scoreMode}`);
 
     const payload = {
       full_name: formData.full_name,
@@ -71,15 +81,69 @@ export const FactoraPage: React.FC = () => {
       prior_borrowing: formData.prior_borrowing,
     };
 
-    console.log('[FactoraPage] Submitting to score-checker:', scoreCheckerUrl);
-
     try {
+      let authToken = '';
+      let correlationId = '';
+
+      // Secure mode: Get token from score-broker first
+      if (scoreMode === 'secure') {
+        console.log('[FactoraPage] Secure mode: Requesting token from score-broker');
+        
+        const brokerPayload = {
+          full_name: formData.full_name,
+          email: formData.email,
+          national_id: formData.national_id,
+        };
+
+        const brokerResult = await fetchWithRetries(scoreBrokerUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Origin': window.location.origin,
+            'x-factora-client': 'web-app/1.0',
+          },
+          body: JSON.stringify(brokerPayload),
+          maxAttempts: 3,
+        });
+
+        if (!brokerResult.ok) {
+          throw new Error(
+            `Token broker error (${brokerResult.status}): ${brokerResult.json?.error || 'Unknown error'}. Correlation ID: ${brokerResult.correlationId}`
+          );
+        }
+
+        const tokenData = brokerResult.json;
+        authToken = tokenData.token;
+        correlationId = tokenData.correlation_id;
+
+        console.log('[FactoraPage] Token acquired:', {
+          ttl_seconds: tokenData.ttl_seconds,
+          correlation_id: correlationId,
+        });
+      }
+
+      // Call score-checker (with or without Authorization header)
+      console.log('[FactoraPage] Submitting to score-checker:', scoreCheckerUrl);
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Origin': window.location.origin,
+        'x-factora-client': 'web-app/1.0',
+      };
+
+      // Add Authorization header in secure mode
+      if (scoreMode === 'secure' && authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
+      // Add correlation_id if available
+      if (correlationId) {
+        headers['x-correlation-id'] = correlationId;
+      }
+
       const result = await fetchWithRetries(scoreCheckerUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Origin': window.location.origin,
-        },
+        headers,
         body: JSON.stringify(payload),
         maxAttempts: 3,
       });
