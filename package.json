@@ -17,7 +17,10 @@
     "smoke-test": "node scripts/frontend-smoke-test.cjs",
     "health-check": "tsx src/scripts/api-health-check.ts",
     "test-credit-scoring": "tsx src/scripts/test-credit-scoring.ts",
-    "verify-diagnostics": "tsx src/scripts/verify-diagnostics-node.ts"
+    "verify-diagnostics": "tsx src/scripts/verify-diagnostics-node.ts",
+    "launch-agent": "node scripts/launch-agent.cjs",
+    "launch-agent:dry-run": "node scripts/launch-agent.cjs --dry-run",
+    "launch-agent:verbose": "node scripts/launch-agent.cjs --verbose"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",

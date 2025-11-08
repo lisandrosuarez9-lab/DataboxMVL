@@ -93,6 +93,7 @@ dist
 tmp/
 temp/
 artifacts/
+backups/
 
 # Logs
 logs

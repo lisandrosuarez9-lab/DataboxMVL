@@ -1,0 +1,14 @@
+{
+  "supabase_project_ref": "rzashahhkafjicjpupww",
+  "score_checker_fn_url": "https://rzashahhkafjicjpupww.supabase.co/functions/v1/score-checker",
+  "github_username": "lisandrosuarez9-lab",
+  "github_repo": "DataboxMVL",
+  "github_pages_url": "https://lisandrosuarez9-lab.github.io/DataboxMVL/",
+  "github_pages_origin": "https://lisandrosuarez9-lab.github.io",
+  "publishable_key": "",
+  "ci_branch": "main",
+  "trusted_functions": ["profile-read", "admin-worker"],
+  "vault_location": "GitHub Secrets",
+  "min_node_version": "18.0.0",
+  "min_npm_version": "9.0.0"
+}
