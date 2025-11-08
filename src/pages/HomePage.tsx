@@ -46,6 +46,11 @@ const HomePage: React.FC = () => {
               📊 View Dashboard
             </Button>
           </Link>
+          <Link to="/factora">
+            <Button variant="primary" size="lg" className="w-full sm:w-auto bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700">
+              🎯 Get Credit Score
+            </Button>
+          </Link>
           <Link to="/login">
             <Button variant="secondary" size="lg" className="w-full sm:w-auto">
               🔐 Access Control
