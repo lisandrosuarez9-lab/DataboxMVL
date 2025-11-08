@@ -35,7 +35,10 @@ npm run launch-agent:dry-run
 npm run launch-agent
 ```
 
-See [Launch Agent Documentation](docs/LAUNCH_AGENT.md) for complete details on deterministic deployment automation.
+**Documentation:**
+- [AI Mandate](docs/LAUNCH_AGENT_MANDATE.md) - Comprehensive six-section deployment mandate for automation agents
+- [Launch Agent Documentation](docs/LAUNCH_AGENT.md) - Complete details on deterministic deployment automation
+- [Quick Reference](docs/LAUNCH_AGENT_QUICK_REF.md) - Command reference and common workflows
 
 ## 🏗️ Architecture
 
