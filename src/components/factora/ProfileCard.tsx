@@ -7,7 +7,8 @@ import React from 'react';
 
 interface BorrowerData {
   borrower_id: string;
-  full_name: string;
+  full_name?: string;
+  name?: string; // alternate property name
   national_id: string;
   email: string;
   phone: string;
@@ -21,7 +22,8 @@ interface EnrichmentData {
 }
 
 interface ScoreData {
-  factora_score: number;
+  factora_score?: number;
+  value?: number; // alternate property name
   score_band?: string;
   risk_level?: string;
 }
@@ -40,6 +42,29 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
   onReset,
   isDemo = false,
 }) => {
+  // Defensive parsing as per mandate
+  const name = borrower?.full_name || borrower?.name || 'Name not provided';
+  const scoreValue = score?.factora_score ?? score?.value ?? null;
+  
+  if (scoreValue === null) {
+    return (
+      <div className="profile-card">
+        <div className="profile-header">
+          <h2>Profile Unavailable</h2>
+        </div>
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+          <p>Profile unavailable — see troubleshooting</p>
+          <p style={{ fontSize: '0.875rem', color: '#718096', marginTop: '1rem' }}>
+            Please check the console for correlation ID and error details.
+          </p>
+          <button onClick={onReset} className="btn-primary" style={{ marginTop: '1.5rem' }}>
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const getScoreColor = (factora_score: number) => {
     if (factora_score >= 700) return 'score-excellent';
     if (factora_score >= 650) return 'score-good';
@@ -79,16 +104,16 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
         <h2>Your Factora Credit Score</h2>
       </div>
 
-      <div className={`score-display ${getScoreColor(score.factora_score)}`}>
-        <div className="score-number">{score.factora_score}</div>
-        <div className="score-label">{score.score_band || getScoreBand(score.factora_score)}</div>
+      <div className={`score-display ${getScoreColor(scoreValue)}`}>
+        <div className="score-number">{scoreValue}</div>
+        <div className="score-label">{score.score_band || getScoreBand(scoreValue)}</div>
       </div>
 
       <div className="profile-details">
         <h3>Borrower Information</h3>
         <div className="detail-row">
           <span className="detail-label">Name:</span>
-          <span className="detail-value">{borrower.full_name}</span>
+          <span className="detail-value">{name}</span>
         </div>
         <div className="detail-row">
           <span className="detail-label">ID:</span>
