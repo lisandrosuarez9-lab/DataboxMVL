@@ -1,24 +1,25 @@
 {
-  "note": "POST smoke test simulated in restricted environment",
+  "note": "Network access restricted in sandboxed environment",
   "expected_response": {
     "borrower": {
       "borrower_id": "demo-123456",
-      "full_name": "Smoke Test",
-      "email": "smoke@example.com",
+      "full_name": "Test User",
+      "email": "test@example.com",
       "phone": "+1-000-000-0000",
       "national_id": "000000000",
-      "created_at": "2025-11-08T03:30:08Z"
-    },
-    "score": {
-      "score_id": "score-654321",
-      "factora_score": 650,
-      "score_band": "fair"
+      "created_at": "2025-11-08T04:00:00.000Z"
     },
     "enrichment": {
       "source": "demo",
       "notes": "synthetic demo enrichment"
     },
-    "correlation_id": "smoke-20251108T033008Z"
+    "score": {
+      "score_id": "score-123456",
+      "factora_score": 650,
+      "score_band": "fair"
+    },
+    "correlation_id": "cid-123456"
   },
-  "status": "Function stub requires deployment by maintainers"
+  "test_command": "curl -s 'https://rzashahhkafjicjpupww.supabase.co/functions/v1/score-checker' -H 'Content-Type: application/json' -H 'Origin: https://lisandrosuarez9-lab.github.io' -H 'X-Factora-Correlation-Id: smoke-test' -d '{\"full_name\":\"Smoke Test\",\"national_id\":\"000000000\",\"email\":\"smoke@example.com\",\"phone\":\"+1-000-000-0000\",\"consent\":true}'",
+  "status": "NETWORK_RESTRICTED - Must be tested in production"
 }

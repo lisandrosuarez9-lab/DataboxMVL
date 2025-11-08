@@ -1,10 +1,18 @@
-# CORS OPTIONS Preflight Check (simulated in restricted environment)
-# In production, expect:
+=== CORS OPTIONS Test ===
+Note: Network access restricted in sandboxed environment.
+Expected headers when endpoint is accessible:
+
 HTTP/2 204
 access-control-allow-origin: https://lisandrosuarez9-lab.github.io
-access-control-allow-methods: GET, POST, OPTIONS
 access-control-allow-headers: Content-Type, Authorization, X-Factora-Correlation-Id
+access-control-allow-methods: GET, POST, OPTIONS
 access-control-max-age: 86400
+content-type: application/json
 
-Note: Actual check requires network access to https://rzashahhkafjicjpupww.supabase.co/functions/v1/score-checker
-Function stub must be deployed by maintainers from artifacts/function-patch/score-checker/index.js
+Test command:
+curl -i -X OPTIONS 'https://rzashahhkafjicjpupww.supabase.co/functions/v1/score-checker' \
+  -H "Origin: https://lisandrosuarez9-lab.github.io" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: Content-Type, Authorization, X-Factora-Correlation-Id"
+
+Status: NETWORK_RESTRICTED - Test must be run in production environment

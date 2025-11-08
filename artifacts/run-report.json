@@ -1,31 +1,71 @@
 {
-  "run_id": "a5b13a12-e180-43b6-adcb-d9f0f30231d1",
-  "timestamp": "20251108T033008Z",
+  "run_id": "6996fd0d-8aef-485c-9789-a59b9085358a",
+  "timestamp": "2025-11-08T04:50:39Z",
   "status": "success",
   "checks": {
     "preflight_ok": true,
     "function_deployed": false,
     "function_cors_ok": false,
     "function_post_ok": false,
-    "files_written": true,
-    "build_success": true,
+    "frontend_built": true,
     "pages_deployed": false,
-    "site_index_contains_hero": false,
+    "site_index_contains_hero": true,
     "headless_test_ok": false,
-    "demo_fallback_available": true,
-    "no_secrets_in_repo": true
+    "demo_fallback_used": false,
+    "no_secrets_in_repo": true,
+    "vite_base_configured": true,
+    "env_vars_in_dist": true,
+    "dist_assets_correct_path": true,
+    "function_patch_exists": true,
+    "build_success": true,
+    "typescript_compiled": true,
+    "network_restricted": true
   },
   "artifacts": {
     "preflight": "artifacts/preflight.json",
-    "function_patch": "artifacts/function-patch/score-checker/index.js",
-    "function_deploy_log": "artifacts/function-deploy-log.txt",
-    "score_checker_response": "artifacts/score-checker-response.json",
     "build_log": "artifacts/build-log.txt",
-    "files_manifest": "files/manifest.json",
-    "dist_manifest": "dist/artifact-manifest.txt",
+    "npm_install_log": "artifacts/npm-install.log",
+    "env_in_dist": "artifacts/env-in-dist.txt",
     "cors_headers": "artifacts/cors-headers.txt",
-    "git_push_log": "artifacts/git-push.log"
+    "score_checker_response": "artifacts/score-checker-response.json",
+    "site_index": "artifacts/site-index.html",
+    "function_patch": "artifacts/function-patch/score-checker/index.js",
+    "secrets_check": "artifacts/secrets-check.txt",
+    "execution_summary": "EXECUTION_SUMMARY.md",
+    "deployment_instructions": "DEPLOYMENT_INSTRUCTIONS.md"
   },
   "errors": [],
-  "notes": "Build completed successfully. Frontend files patched with: (1) Hero.jsx with dominant CTA, (2) IntakeForm.jsx with fetchWithRetries and demo fallback, (3) ProfileCard.jsx with robust accessors, (4) fetchWithRetries.js with retry logic and correlation IDs, (5) styles.css with CTA prominence. Function stub created at artifacts/function-patch/score-checker/index.js and requires deployment by maintainers. Network checks and deployment skipped due to restricted environment. Branch feat/factora-ui created with all changes committed. Next actions: (1) Push feat/factora-ui branch using report_progress tool, (2) Maintainers deploy function stub from artifacts/function-patch/, (3) Run smoke tests in production environment, (4) Deploy to GitHub Pages via CI/CD."
+  "warnings": [
+    "Network access restricted in sandboxed environment - CORS and function tests cannot be performed",
+    "GitHub Pages deployment requires maintainer action",
+    "Function stub deployment requires Supabase CLI and project access"
+  ],
+  "build_info": {
+    "node_version": "v20.19.5",
+    "npm_version": "10.8.2",
+    "git_version": "2.51.2",
+    "build_time": "6.68s",
+    "bundle_size_kb": {
+      "index_js": 300.05,
+      "vendor_js": 141.31,
+      "index_css": 49.18
+    }
+  },
+  "configuration": {
+    "vite_base": "/DataboxMVL/",
+    "function_url": "https://rzashahhkafjicjpupww.supabase.co/functions/v1/score-checker",
+    "github_pages_url": "https://lisandrosuarez9-lab.github.io/DataboxMVL/",
+    "cors_origin": "https://lisandrosuarez9-lab.github.io"
+  },
+  "notes": "Build completed successfully with all assets correctly configured for /DataboxMVL/ base path. Function patch (CORS-ready demo stub) exists and is ready for deployment. Environment variables properly embedded in dist bundle. Due to network restrictions, live endpoint tests (CORS, POST) cannot be performed in this environment and must be run post-deployment. All artifacts generated and documentation complete. Next steps: (1) Deploy function stub to Supabase, (2) Deploy built site to GitHub Pages, (3) Run production verification tests, (4) Perform E2E validation.",
+  "next_steps": [
+    "Deploy function stub: supabase functions deploy score-checker --project-ref rzashahhkafjicjpupww --no-verify-jwt",
+    "Deploy to GitHub Pages: npm run deploy (or merge PR to trigger CI)",
+    "Verify CORS: curl -i -X OPTIONS https://rzashahhkafjicjpupww.supabase.co/functions/v1/score-checker",
+    "Test function POST with sample data",
+    "Verify site loads at https://lisandrosuarez9-lab.github.io/DataboxMVL/",
+    "Run E2E test: click CTA, submit form, verify ProfileCard renders",
+    "Update artifacts/site-index.html with live page content",
+    "Validate all assets load from /DataboxMVL/assets/ without 404s"
+  ]
 }
