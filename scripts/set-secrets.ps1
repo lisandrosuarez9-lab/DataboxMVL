@@ -51,47 +51,93 @@ try {
     exit 1
 }
 
-# Generate keypair using Node.js inline script
+# Generate keypair using Node.js inline script with jose
 Write-Host ""
 Write-Host "Generating Ed25519 keypair..." -ForegroundColor Yellow
 
-$genScript = @"
-const jose = require('jose');
+# Create temporary directory for the script
+$tempDir = Join-Path ([System.IO.Path]::GetTempPath()) ("keygen_" + [System.Guid]::NewGuid().ToString())
+New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+
+$tempScript = Join-Path $tempDir "generate.mjs"
+$tempPackage = Join-Path $tempDir "package.json"
+
+# Create minimal package.json for ES modules
+$packageJson = @"
+{
+  "type": "module"
+}
+"@
+Set-Content -Path $tempPackage -Value $packageJson
+
+$genScriptContent = @"
+import * as jose from 'jose';
 
 (async () => {
-  const { publicKey, privateKey } = await jose.generateKeyPair('EdDSA', { crv: 'Ed25519' });
-  const privateJWK = await jose.exportJWK(privateKey);
-  const publicJWK = await jose.exportJWK(publicKey);
-  
-  privateJWK.kid = 'score-broker-ed25519-v1';
-  publicJWK.kid = 'score-broker-ed25519-v1';
-  
-  const privateJson = JSON.stringify(privateJWK);
-  const publicJson = JSON.stringify(publicJWK);
-  
-  // Base64 encode for PowerShell safety
-  const privateB64 = Buffer.from(privateJson).toString('base64');
-  const publicB64 = Buffer.from(publicJson).toString('base64');
-  
-  // Also prepare a trusted JWKs array (containing the public key)
-  const trustedJWKs = JSON.stringify({ keys: [publicJWK] });
-  const trustedB64 = Buffer.from(trustedJWKs).toString('base64');
-  
-  console.log(JSON.stringify({
-    privateJWK: privateJson,
-    publicJWK: publicJson,
-    privateB64: privateB64,
-    publicB64: publicB64,
-    trustedB64: trustedB64
-  }));
+  try {
+    // Generate Ed25519 keypair with extractable option
+    const { publicKey, privateKey } = await jose.generateKeyPair('EdDSA', { 
+      crv: 'Ed25519',
+      extractable: true 
+    });
+    
+    const privateJWK = await jose.exportJWK(privateKey);
+    const publicJWK = await jose.exportJWK(publicKey);
+    
+    privateJWK.kid = 'score-broker-ed25519-v1';
+    publicJWK.kid = 'score-broker-ed25519-v1';
+    
+    const privateJson = JSON.stringify(privateJWK);
+    const publicJson = JSON.stringify(publicJWK);
+    
+    // Base64 encode for PowerShell safety
+    const privateB64 = Buffer.from(privateJson).toString('base64');
+    const publicB64 = Buffer.from(publicJson).toString('base64');
+    
+    // Also prepare a trusted JWKs array (containing the public key)
+    const trustedJWKs = JSON.stringify({ keys: [publicJWK] });
+    const trustedB64 = Buffer.from(trustedJWKs).toString('base64');
+    
+    console.log(JSON.stringify({
+      privateJWK: privateJson,
+      publicJWK: publicJson,
+      privateB64: privateB64,
+      publicB64: publicB64,
+      trustedB64: trustedB64
+    }));
+  } catch (err) {
+    console.error(JSON.stringify({ error: err.message, stack: err.stack }));
+    process.exit(1);
+  }
 })();
 "@
 
 try {
-    $output = $genScript | node -e "eval(require('fs').readFileSync(0, 'utf-8'))"
+    # Write temporary script
+    Set-Content -Path $tempScript -Value $genScriptContent
+    
+    # Install jose in temp directory
+    Write-Host "  Installing jose package..." -ForegroundColor Gray
+    Push-Location $tempDir
+    $null = npm install --silent jose 2>&1
+    Pop-Location
+    
+    # Run the script
+    $output = node $tempScript
+    
+    # Clean up temp directory
+    Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+    
+    if ($output -match '"error"') {
+        $errorData = $output | ConvertFrom-Json
+        throw $errorData.error
+    }
+    
     $keys = $output | ConvertFrom-Json
     Write-Host "✓ Keypair generated successfully" -ForegroundColor Green
 } catch {
+    # Clean up temp directory on error
+    Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
     Write-Host "✗ Failed to generate keypair: $_" -ForegroundColor Red
     exit 1
 }
