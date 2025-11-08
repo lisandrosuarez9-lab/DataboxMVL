@@ -23,6 +23,20 @@ npm run typecheck
 npm run lint
 ```
 
+### 🤖 Automated Deployment
+
+For production deployment, use the Launch Automation Agent:
+
+```bash
+# Validate environment (dry run)
+npm run launch-agent:dry-run
+
+# Deploy to GitHub Pages
+npm run launch-agent
+```
+
+See [Launch Agent Documentation](docs/LAUNCH_AGENT.md) for complete details on deterministic deployment automation.
+
 ## 🏗️ Architecture
 
 This application has been completely modernized from a monolithic HTML structure to a cutting-edge React 18-based architecture:
