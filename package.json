@@ -24,7 +24,8 @@
     "generate-jwk": "node scripts/generate-ed25519-jwk.mjs",
     "rotate-key": "node scripts/rotate-ed25519-key.mjs",
     "validate-jwk": "node scripts/validate-jwk.mjs",
-    "phase1:smoke-test": "node scripts/phase1-smoke-test.mjs"
+    "phase1:smoke-test": "node scripts/phase1-smoke-test.mjs",
+    "phase1:test-scripts": "node scripts/test-phase1-scripts.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",
