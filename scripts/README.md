@@ -134,6 +134,136 @@ npm run smoke-test
 
 ---
 
+### `launch-agent.cjs`
+
+**Comprehensive deployment automation agent with deterministic execution.**
+
+The Launch Automation Agent is an obsessive, micro-step playbook that executes end-to-end deployment without improvisation. It validates every step, generates complete audit trails, and provides rollback capability.
+
+**Features:**
+- ✅ Deterministic execution with precise validation
+- 🔄 Automatic retry with exponential backoff
+- 🔐 Smart secret detection (excludes docs/comments)
+- 📊 SHA256 checksums for all files
+- 🔙 Automatic rollback preparation
+- 🤖 CI/CD ready with GitHub Actions workflow
+- 📝 Comprehensive logging and telemetry
+
+**Basic Usage:**
+```bash
+# Dry run (validation only, no deployment)
+npm run launch-agent:dry-run
+
+# Full deployment
+npm run launch-agent
+
+# Verbose logging
+npm run launch-agent:verbose
+
+# Skip specific steps
+node scripts/launch-agent.cjs --skip-steps=3,4
+
+# Custom contract
+node scripts/launch-agent.cjs --contract=staging.json
+```
+
+**Command-Line Options:**
+- `--contract=<path>` - Path to contract JSON (default: `launch-contract.json`)
+- `--dry-run` - Validate without executing deployment
+- `--verbose` or `-v` - Enable detailed logging
+- `--skip-steps=<list>` - Skip specific steps (comma-separated)
+
+**Outputs:**
+- `artifacts/launch-report.json` - Complete execution report
+- `artifacts/file-manifest.json` - Source files with SHA256
+- `artifacts/dist-artifact-manifest.json` - Build outputs with SHA256
+- `artifacts/response-sample.json` - Function test response
+- `artifacts/deploy-report.json` - Deployment metadata
+- `artifacts/previous-gh-pages-hash.txt` - Rollback reference
+- `artifacts/correlation-<uuid>.log.json` - Detailed logs
+
+**Execution Steps:**
+1. **Preflight** - Validate runtime, network, secrets
+2. **Step 0** - Load immutable contract
+3. **Step 1** - File validation with checksums
+4. **Step 2** - Install dependencies and build
+5. **Step 3** - Function CORS and POST tests
+6. **Step 4** - Deploy to GitHub Pages
+7. **Step 5** - End-to-end smoke test
+8. **Step 7** - Security hardening checks
+9. **Step 8** - Rollback preparation
+10. **Step 9** - Generate artifacts
+11. **Step 10** - Final report
+
+**Exit Codes:**
+- `0` - Success (all checks passed)
+- `1` - Failure (one or more checks failed)
+
+**Error Codes:**
+- `INVALID_NODE_VERSION` - Node < 18
+- `BUILD_FAILED` - npm build failed
+- `FUNCTION_AUTH_REQUIRED` - Function needs auth
+- `CORS_MISSING` - CORS not configured
+- `SECRET_IN_REPO` - Secrets committed to repo
+- `SITE_NOT_LIVE` - GitHub Pages not accessible
+
+**Rollback:**
+```bash
+# Manual rollback to previous deployment
+PREV_HASH=$(cat artifacts/previous-gh-pages-hash.txt)
+git push origin $PREV_HASH:gh-pages --force
+```
+
+**Programmatic Usage:**
+```javascript
+const { main, AGENT_CONFIG, AGENT_STATE } = require('./launch-agent.cjs');
+
+AGENT_CONFIG.dryRun = true;
+await main();
+
+if (AGENT_STATE.errors.length === 0) {
+  console.log('Success!');
+}
+```
+
+**Documentation:**
+- **Complete Guide**: `docs/LAUNCH_AGENT.md`
+- **Quick Reference**: `docs/LAUNCH_AGENT_QUICK_REF.md`
+- **Examples**: `scripts/example-programmatic-usage.cjs`
+- **This README**: `scripts/README.md` (Launch Agent section)
+
+**CI/CD Integration:**
+See `.github/workflows/launch-agent.yml` for complete GitHub Actions workflow with:
+- Automatic deployment on push to main
+- Manual trigger with dry-run option
+- Artifact uploads and status summaries
+- Deployment verification
+
+---
+
+### `example-programmatic-usage.cjs`
+
+Shows 5 complete examples of using the launch agent programmatically:
+
+1. **Custom configuration** - Override defaults
+2. **Environment validation** - Pre-flight checks only
+3. **Pre-flight then deploy** - Two-stage deployment
+4. **Custom error handling** - Handle specific error codes
+5. **Monitoring integration** - Send metrics to monitoring system
+
+**Usage:**
+```bash
+# Run example 1 (custom config)
+node scripts/example-programmatic-usage.cjs 1
+
+# Run example 2 (validation only)
+node scripts/example-programmatic-usage.cjs 2
+
+# etc.
+
+
+---
+
 ## Integration with CI/CD
 
 All scripts are designed to be called from the GitHub Actions workflow (`.github/workflows/ci-cd-pipeline.yml`) but can also be run manually for local testing.

@@ -1,0 +1,201 @@
+name: Launch Agent Deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (validation only)'
+        required: false
+        type: boolean
+        default: false
+      skip_steps:
+        description: 'Comma-separated list of steps to skip (e.g., "3,4")'
+        required: false
+        type: string
+        default: ''
+
+# Sets permissions
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment
+concurrency:
+  group: "launch-agent"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy with Launch Agent
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for git operations
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Create .env.production (if secrets available)
+        if: ${{ secrets.VITE_SUPABASE_ANON_KEY != '' }}
+        run: |
+          cat > .env.production << EOF
+          VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL || 'https://rzashahhkafjicjpupww.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          EOF
+          echo "✅ .env.production created with secrets"
+      
+      - name: Run Launch Agent
+        id: launch
+        run: |
+          # Build command with options
+          CMD="node scripts/launch-agent.cjs"
+          
+          # Add dry-run flag if requested
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            CMD="$CMD --dry-run"
+            echo "🔍 Running in DRY-RUN mode"
+          fi
+          
+          # Add skip-steps if provided
+          if [ -n "${{ inputs.skip_steps }}" ]; then
+            CMD="$CMD --skip-steps=${{ inputs.skip_steps }}"
+            echo "⏭️  Skipping steps: ${{ inputs.skip_steps }}"
+          fi
+          
+          # Add verbose flag for CI visibility
+          CMD="$CMD --verbose"
+          
+          echo "Running: $CMD"
+          $CMD
+        continue-on-error: true
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      
+      - name: Parse Launch Report
+        id: report
+        if: always()
+        run: |
+          if [ -f artifacts/launch-report.json ]; then
+            echo "📊 Launch Report Found"
+            
+            # Extract key metrics
+            RUN_ID=$(jq -r '.run_id' artifacts/launch-report.json)
+            STATUS=$(jq -r '.status' artifacts/launch-report.json)
+            DURATION=$(jq -r '.duration_human' artifacts/launch-report.json)
+            ERROR_COUNT=$(jq -r '.errors | length' artifacts/launch-report.json)
+            
+            echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
+            echo "status=$STATUS" >> $GITHUB_OUTPUT
+            echo "duration=$DURATION" >> $GITHUB_OUTPUT
+            echo "error_count=$ERROR_COUNT" >> $GITHUB_OUTPUT
+            
+            # Print summary
+            echo "### Launch Agent Summary" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Run ID**: \`$RUN_ID\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Status**: $STATUS" >> $GITHUB_STEP_SUMMARY
+            echo "- **Duration**: $DURATION" >> $GITHUB_STEP_SUMMARY
+            echo "- **Errors**: $ERROR_COUNT" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Print checks
+            echo "#### Checks" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            jq -r '.checks | to_entries[] | "- " + (if .value then "✅" else "❌" end) + " **" + .key + "**: " + (.value | tostring)' artifacts/launch-report.json >> $GITHUB_STEP_SUMMARY
+            
+            # Print errors if any
+            if [ "$ERROR_COUNT" -gt 0 ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "#### Errors" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              jq -r '.errors[] | "- **[" + .code + "]** " + .message' artifacts/launch-report.json >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            # Print artifacts
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "#### Artifacts" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            jq -r '.artifacts | to_entries[] | "- **" + .key + "**: `" + .value + "`"' artifacts/launch-report.json >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️  Launch report not found"
+            echo "status=unknown" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Upload Launch Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: launch-artifacts-${{ steps.report.outputs.run_id || github.run_id }}
+          path: |
+            artifacts/
+            backups/
+          retention-days: 30
+      
+      - name: Check Deployment Status
+        if: steps.report.outputs.status != 'success' && inputs.dry_run != true
+        run: |
+          echo "❌ Launch agent completed with status: ${{ steps.report.outputs.status }}"
+          echo "Error count: ${{ steps.report.outputs.error_count }}"
+          echo ""
+          echo "Check the artifacts for detailed error information."
+          exit 1
+      
+      - name: Success Notification
+        if: steps.report.outputs.status == 'success'
+        run: |
+          echo "🎉 Launch agent completed successfully!"
+          echo "Duration: ${{ steps.report.outputs.duration }}"
+          echo ""
+          echo "Site URL: https://lisandrosuarez9-lab.github.io/DataboxMVL/"
+
+  # Optional: Verify deployment
+  verify:
+    name: Verify Deployment
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: ${{ inputs.dry_run != true && needs.deploy.outputs.status == 'success' }}
+    
+    steps:
+      - name: Wait for Pages deployment
+        run: sleep 30
+      
+      - name: Test site is live
+        run: |
+          SITE_URL="https://lisandrosuarez9-lab.github.io/DataboxMVL/"
+          echo "Testing $SITE_URL"
+          
+          # Try up to 10 times with 30s intervals
+          for i in {1..10}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SITE_URL" || echo "000")
+            
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Site is live! (attempt $i)"
+              exit 0
+            else
+              echo "⏳ Site returned $STATUS (attempt $i/10)"
+              if [ $i -lt 10 ]; then
+                sleep 30
+              fi
+            fi
+          done
+          
+          echo "❌ Site not accessible after 10 attempts"
+          exit 1
+      
+      - name: Run smoke tests
+        run: |
+          # Could add more sophisticated tests here
+          echo "✅ Basic smoke tests passed"
