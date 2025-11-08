@@ -1,6 +1,7 @@
 // score-broker: Token broker for secure credit scoring flow
-// Phase 0: Issues demo tokens (unsigned) for score-checker access
+// Phase 1: Issues EdDSA (Ed25519) signed JWT tokens for score-checker access
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import * as jose from 'https://deno.land/x/jose@v5.2.0/index.ts';
 
 const ALLOWED_ORIGIN = 'https://lisandrosuarez9-lab.github.io';
 const CORS_HEADERS = {
@@ -13,6 +14,29 @@ const CORS_HEADERS = {
 
 const TOKEN_TTL_SECONDS = 45;
 
+// Rate limit configuration (soft limits - log only)
+const RATE_LIMIT_PII_PER_MINUTE = 1;
+const RATE_LIMIT_REQUESTER_PER_HOUR = 10;
+
+// In-memory rate limit tracking
+const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
+
+/**
+ * JWK Structure for EdDSA (Ed25519) private key:
+ * Example JWK structure stored in Supabase secret SCORE_BROKER_ED25519_JWK:
+ * {
+ *   "kty": "OKP",
+ *   "crv": "Ed25519",
+ *   "x": "<base64url-encoded-public-key>",
+ *   "d": "<base64url-encoded-private-key>",
+ *   "kid": "score-broker-ed25519-v1"
+ * }
+ * 
+ * To generate a new Ed25519 key pair:
+ * const { publicKey, privateKey } = await jose.generateKeyPair('EdDSA', { crv: 'Ed25519' });
+ * const jwk = await jose.exportJWK(privateKey);
+ */
+
 // Structured logging helper
 function log(level: string, event: string, metadata: Record<string, any> = {}) {
   console.log(JSON.stringify({
@@ -23,14 +47,36 @@ function log(level: string, event: string, metadata: Record<string, any> = {}) {
   }));
 }
 
-// Hash national_id for privacy-preserving logs
+// Hash national_id for privacy-preserving logs (SHA-256)
 async function hashNationalId(nationalId: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(nationalId);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return `sha256:${hashHex}`;
+  return hashHex; // Return just the hex string, without prefix for consistency
+}
+
+// Truncate hash to first 16 hex characters for logging
+function truncateHash(hash: string): string {
+  return hash.substring(0, 16);
+}
+
+// Check and update rate limits (soft - log only, does not block)
+function checkRateLimit(key: string, limit: number, windowSeconds: number): { limited: boolean; count: number } {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  
+  if (!entry || (now - entry.windowStart) > windowSeconds * 1000) {
+    // New window
+    rateLimitMap.set(key, { count: 1, windowStart: now });
+    return { limited: false, count: 1 };
+  }
+  
+  // Same window
+  entry.count++;
+  const limited = entry.count > limit;
+  return { limited, count: entry.count };
 }
 
 // Extract email domain for logging (privacy-preserving)
@@ -43,6 +89,40 @@ function getEmailDomain(email: string): string {
 function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
+}
+
+// Generate 128-bit nonce as base64url string (16 bytes = 128 bits)
+function generateNonce(): string {
+  const buffer = new Uint8Array(16);
+  crypto.getRandomValues(buffer);
+  // Convert to base64url
+  return btoa(String.fromCharCode(...buffer))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
+// Load EdDSA private key from Supabase secret
+async function loadPrivateKey(): Promise<jose.KeyLike> {
+  try {
+    const jwkJson = Deno.env.get('SCORE_BROKER_ED25519_JWK');
+    
+    if (!jwkJson) {
+      throw new Error('SCORE_BROKER_ED25519_JWK secret not configured');
+    }
+    
+    const jwk = JSON.parse(jwkJson);
+    
+    // Import the JWK as a private key
+    const privateKey = await jose.importJWK(jwk, 'EdDSA');
+    return privateKey;
+  } catch (error) {
+    log('ERROR', 'key_load_failed', {
+      error_message: String(error),
+      error_type: 'key_configuration'
+    });
+    throw new Error('Failed to load signing key');
+  }
 }
 
 function makeResponse(status: number, payload: any) {
@@ -144,39 +224,79 @@ async function handler(req: Request) {
       });
     }
 
-    // Generate token components
-    const nonce = crypto.randomUUID();
-    const now = Date.now();
-    const exp = Math.floor(now / 1000) + TOKEN_TTL_SECONDS; // Unix timestamp
-    const issuedAt = new Date(now).toISOString();
+    // Hash national_id for PII privacy (SHA-256)
+    const piiHash = await hashNationalId(payload.national_id);
+    const emailDomain = getEmailDomain(payload.email);
+    
+    // Generate requester_id (hash of email domain for privacy)
+    const requesterIdHash = await hashNationalId(emailDomain);
+    
+    // Check rate limits (soft - log only, does not block)
+    const piiRateLimit = checkRateLimit(`pii:${piiHash}`, RATE_LIMIT_PII_PER_MINUTE, 60);
+    const requesterRateLimit = checkRateLimit(`requester:${requesterIdHash}`, RATE_LIMIT_REQUESTER_PER_HOUR, 3600);
+    
+    if (piiRateLimit.limited) {
+      log('WARN', 'rate_limit_exceeded', {
+        correlation_id: correlationId,
+        limit_type: 'pii_per_minute',
+        pii_hash_truncated: truncateHash(piiHash),
+        count: piiRateLimit.count,
+        limit: RATE_LIMIT_PII_PER_MINUTE,
+        action: 'log_only'
+      });
+    }
+    
+    if (requesterRateLimit.limited) {
+      log('WARN', 'rate_limit_exceeded', {
+        correlation_id: correlationId,
+        limit_type: 'requester_per_hour',
+        requester_id: truncateHash(requesterIdHash),
+        count: requesterRateLimit.count,
+        limit: RATE_LIMIT_REQUESTER_PER_HOUR,
+        action: 'log_only'
+      });
+    }
 
-    // Create demo token payload
-    const tokenPayload = {
+    // Generate token components
+    const nonce = generateNonce(); // 128-bit nonce
+    const jti = crypto.randomUUID(); // Unique token ID
+    const now = Math.floor(Date.now() / 1000);
+    const exp = now + TOKEN_TTL_SECONDS;
+    const issuedAt = new Date(now * 1000).toISOString();
+
+    // Load private key and sign JWT
+    const privateKey = await loadPrivateKey();
+    
+    // Create JWT with EdDSA signature
+    const token = await new jose.SignJWT({
       nonce,
       correlation_id: correlationId,
-      exp
-    };
-
-    // Encode as base64url (Phase 0: unsigned)
-    const payloadJson = JSON.stringify(tokenPayload);
-    const payloadBase64 = btoa(payloadJson)
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '');
-
-    // Demo token format: "demo.<base64-payload>"
-    const token = `demo.${payloadBase64}`;
+      requester_id: requesterIdHash,
+      scope: 'score:single',
+      pii_hash: piiHash,
+      jti
+    })
+      .setProtectedHeader({ 
+        alg: 'EdDSA',
+        kid: 'score-broker-ed25519-v1',
+        typ: 'JWT'
+      })
+      .setIssuer('score-broker')
+      .setAudience('score-checker')
+      .setIssuedAt(now)
+      .setExpirationTime(exp)
+      .sign(privateKey);
 
     // Log token issuance (privacy-preserving)
-    const nationalIdHash = await hashNationalId(payload.national_id);
-    const emailDomain = getEmailDomain(payload.email);
-
     log('INFO', 'token_issued', {
       correlation_id: correlationId,
-      national_id_hash: nationalIdHash,
+      pii_hash_truncated: truncateHash(piiHash),
       email_domain: emailDomain,
+      requester_id_truncated: truncateHash(requesterIdHash),
+      jti,
       ttl_seconds: TOKEN_TTL_SECONDS,
-      token_format: 'demo',
+      token_format: 'EdDSA-Ed25519',
+      scope: 'score:single',
       user_agent: req.headers.get('user-agent') || 'unknown',
       duration_ms: Date.now() - startTime
     });
