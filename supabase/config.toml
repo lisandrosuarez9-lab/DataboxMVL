@@ -1,4 +1,4 @@
-﻿[functions]
+[functions]
 verify_jwt = false
 
 [functions.score-broker]
