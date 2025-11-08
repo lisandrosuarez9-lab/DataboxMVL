@@ -128,7 +128,7 @@ async function handler(req: Request) {
       duration_ms: Date.now() - startTime
     });
     
-    return new Response(JSON.stringify({ error: 'internal_error', message: String(err), correlation_id: correlation }), { status: 500, headers: CORS_HEADERS });
+    return new Response(JSON.stringify({ error: 'internal_error', correlation_id: correlation }), { status: 500, headers: CORS_HEADERS });
   }
 }
 

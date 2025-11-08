@@ -204,8 +204,7 @@ async function handler(req: Request) {
     });
 
     return makeResponse(500, { 
-      error: 'internal_error', 
-      message: String(err),
+      error: 'internal_error',
       correlation_id: correlation 
     });
   }
