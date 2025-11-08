@@ -1,0 +1,10 @@
+# CORS OPTIONS Preflight Check (simulated in restricted environment)
+# In production, expect:
+HTTP/2 204
+access-control-allow-origin: https://lisandrosuarez9-lab.github.io
+access-control-allow-methods: GET, POST, OPTIONS
+access-control-allow-headers: Content-Type, Authorization, X-Factora-Correlation-Id
+access-control-max-age: 86400
+
+Note: Actual check requires network access to https://rzashahhkafjicjpupww.supabase.co/functions/v1/score-checker
+Function stub must be deployed by maintainers from artifacts/function-patch/score-checker/index.js

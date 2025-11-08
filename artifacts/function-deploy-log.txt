@@ -1,0 +1,1 @@
+AGENT_HAS_FUNCTION_DEPLOY=false; wrote function patch to artifacts/function-patch for PR
