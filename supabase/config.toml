@@ -1,0 +1,8 @@
+﻿[functions]
+verify_jwt = false
+
+[functions.score-broker]
+verify_jwt = false
+
+[functions.score-checker]
+verify_jwt = false
