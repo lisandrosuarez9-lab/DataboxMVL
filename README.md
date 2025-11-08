@@ -6,6 +6,11 @@ Modern React 18-based application for identity-centric data injection with conse
 
 ## 🚀 Quick Start
 
+### Quick dev
+1. Copy .env.production.example to .env.production locally and set VITE_PROFILE_FN_URL and VITE_SUPABASE_ANON_KEY for build-time only (do not commit .env.production).
+2. npm ci && npm run dev to test locally.
+3. If network calls fail from the browser, run the OPTIONS + POST curl checks in the PR test plan.
+
 ```bash
 # Install dependencies
 npm install

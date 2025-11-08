@@ -1,45 +1,31 @@
 {
-  "timestamp": "2025-11-08T02:35:00Z",
-  "files_modified": [
+  "timestamp": "20251108T033008Z",
+  "run_id": "a5b13a12-e180-43b6-adcb-d9f0f30231d1",
+  "files": [
     {
-      "path": "supabase/functions/score-checker/index.ts",
-      "description": "Updated to exact mandate specification with proper correlation handling",
-      "sha256": "pending"
+      "path": "artifacts/function-patch/score-checker/index.js",
+      "status": "created",
+      "purpose": "CORS-ready deterministic intake stub for score-checker"
     },
     {
-      "path": "src/components/factora/Hero.tsx",
-      "description": "Updated CTA button text to match mandate and ensured proper aria attributes",
-      "sha256": "pending"
+      "path": "artifacts/function-patch/README.md",
+      "status": "created",
+      "purpose": "Documentation for function patch"
     },
     {
       "path": "src/styles/factora.css",
-      "description": "Updated CSS with exact mandate specifications for .hero h1 and .cta",
-      "sha256": "pending"
+      "status": "modified",
+      "purpose": "Enhanced CTA prominence styles"
     },
     {
       "path": "src/components/factora/IntakeForm.tsx",
-      "description": "Added aria-modal attribute and updated loading message",
-      "sha256": "pending"
+      "status": "modified",
+      "purpose": "Added fetchWithRetries import for resilient submission"
     },
-    {
-      "path": "src/components/factora/ProfileCard.tsx",
-      "description": "Added defensive parsing with safe property access",
-      "sha256": "pending"
-    },
-    {
-      "path": "src/pages/FactoraPage.tsx",
-      "description": "Added defensive parsing for API response",
-      "sha256": "pending"
-    }
-  ],
-  "files_created": [
     {
       "path": "artifacts/preflight.json",
-      "description": "Preflight check results"
-    },
-    {
-      "path": "files/manifest.json",
-      "description": "This manifest file"
+      "status": "created",
+      "purpose": "Preflight check results"
     }
   ]
 }

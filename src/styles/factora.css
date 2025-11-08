@@ -438,3 +438,37 @@
     font-size: 3rem;
   }
 }
+
+/* Additional CTA prominence as per spec */
+.hero h1,
+.hero-title {
+  font-size: 2.25rem;
+  line-height: 1.05;
+  margin: 0 0 8px 0;
+}
+
+.cta {
+  display: inline-block;
+  padding: 16px 28px;
+  font-size: 1.125rem;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(11, 116, 222, 0.18);
+  transition: transform .14s ease, box-shadow .14s ease;
+  background: #0b74de;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.cta:focus {
+  outline: 3px solid #0b74de;
+  outline-offset: 3px;
+}
+
+@media (max-width: 720px) {
+  .cta {
+    width: 100%;
+    display: block;
+    margin: 0 auto;
+  }
+}
