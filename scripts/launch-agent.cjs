@@ -874,9 +874,9 @@ function runSecurityChecks() {
   let secretsFound = false;
   
   for (const { pattern, name } of secretPatterns) {
-    // Exclude .env.example, README, and documentation files from secret scanning
+    // Exclude .env.example, README, documentation files, and this script itself from secret scanning
     const grepResult = safeExec(
-      `git grep -i "${pattern}" -- ':!*.md' ':!*.example' ':!*.txt' ':!docs/*' || true`
+      `git grep -i "${pattern}" -- ':!*.md' ':!*.example' ':!*.txt' ':!docs/*' ':!scripts/launch-agent.cjs' || true`
     );
     
     if (grepResult.success && grepResult.stdout.trim()) {
