@@ -3,6 +3,19 @@
  * Minimal, focused styling for credit score intake flow
  */
 
+/* Accessibility - Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 .factora-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -24,6 +37,18 @@
   padding: 3rem 2rem;
   text-align: center;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: fadeInUp 0.2s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .hero-content {
@@ -32,11 +57,11 @@
 }
 
 .hero-title {
-  font-size: 2.5rem;
+  font-size: 2.25rem;
   font-weight: 700;
   color: #1a202c;
-  margin-bottom: 1rem;
-  line-height: 1.2;
+  margin-bottom: 6px;
+  line-height: 1.05;
 }
 
 .hero-subtitle {
@@ -45,26 +70,37 @@
   margin-bottom: 2rem;
 }
 
-.cta-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.cta-button,
+.cta {
+  display: inline-block;
+  background: linear-gradient(135deg, #0b74de 0%, #0a5fb8 100%);
   color: white;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 600;
-  padding: 1rem 3rem;
+  padding: 16px 28px;
   border: none;
-  border-radius: 50px;
+  border-radius: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+  box-shadow: 0 10px 30px rgba(11, 116, 222, 0.18);
+  text-decoration: none;
 }
 
-.cta-button:hover {
+.cta-button:hover,
+.cta:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+  box-shadow: 0 12px 35px rgba(11, 116, 222, 0.25);
 }
 
-.cta-button:active {
-  transform: translateY(0);
+.cta-button:active,
+.cta:active {
+  transform: translateY(1px);
+}
+
+.cta-button:focus,
+.cta:focus {
+  outline: 3px solid #0b74de;
+  outline-offset: 3px;
 }
 
 .hero-note {
@@ -359,6 +395,14 @@
 }
 
 /* Responsive */
+@media (max-width: 720px) {
+  .cta-button,
+  .cta {
+    width: 100%;
+    margin: 0 auto;
+  }
+}
+
 @media (max-width: 640px) {
   .factora-page {
     padding: 1rem 0.5rem;
