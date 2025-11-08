@@ -20,13 +20,12 @@ export const Hero: React.FC<HeroProps> = ({ onGetStarted }) => {
           Fast, secure, and transparent credit evaluation
         </p>
         <button 
-          className="cta-button cta" 
+          className="cta" 
           onClick={onGetStarted}
-          aria-label="Get started with credit score check"
           aria-haspopup="dialog"
           aria-controls="intake-form-dialog"
         >
-          Get Started
+          Get your free Factora Credit Score
         </button>
         <p className="hero-note">
           Takes less than 2 minutes • No hidden fees • Instant results

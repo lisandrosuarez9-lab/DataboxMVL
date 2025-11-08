@@ -117,17 +117,17 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit, onCancel }) =>
 
   if (loading) {
     return (
-      <div className="intake-form" id="intake-form-dialog" role="dialog" aria-label="Credit score application form">
+      <div className="intake-form" id="intake-form-dialog" role="dialog" aria-modal="true" aria-label="Credit score application form">
         <Spinner message="Checking your profile — one moment..." />
         <div role="status" aria-live="polite" className="sr-only">
-          Processing your credit score application
+          Checking your profile — one moment
         </div>
       </div>
     );
   }
 
   return (
-    <div className="intake-form" id="intake-form-dialog" role="dialog" aria-label="Credit score application form">
+    <div className="intake-form" id="intake-form-dialog" role="dialog" aria-modal="true" aria-label="Credit score application form">
       <h2 className="form-title">Credit Score Application</h2>
       <p className="form-subtitle">
         Please provide your information to get your free credit score

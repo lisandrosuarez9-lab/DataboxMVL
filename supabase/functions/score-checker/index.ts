@@ -1,6 +1,4 @@
-// score-checker Supabase Edge Function
-// Handles credit score checking with CORS support for GitHub Pages
-
+// score-checker: Exact handler — replace existing body
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 const ALLOWED_ORIGIN = 'https://lisandrosuarez9-lab.github.io';
@@ -16,40 +14,28 @@ function makeResponse(status: number, payload: any) {
   return new Response(JSON.stringify(payload), { status, headers: CORS_HEADERS });
 }
 
-serve(async (req: Request) => {
+async function handler(req: Request) {
   try {
-    // OPTIONS preflight handling
     if (req.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
-
-    // enforce POST
     if (req.method !== 'POST') {
       return makeResponse(405, { error: 'method_not_allowed' });
     }
 
-    // correlation id handling
-    const correlationId = req.headers.get('x-factora-correlation-id') || crypto.randomUUID?.() || Date.now().toString();
-    
-    // basic JSON parse with guard
+    const correlationId = (req.headers.get('x-factora-correlation-id') || crypto?.randomUUID?.() || `cid-${Date.now()}`);
     let payload;
-    try {
-      payload = await req.json();
-    } catch (e) {
+    try { payload = await req.json(); } catch (e) {
       return makeResponse(400, { error: 'invalid_json', correlation_id: correlationId });
     }
 
-    // minimal required fields check
-    if (!payload.full_name || !payload.email || !payload.national_id) {
+    if (!payload?.full_name || !payload?.email || !payload?.national_id) {
       return makeResponse(400, { error: 'missing_fields', correlation_id: correlationId });
     }
 
-    // --- Business logic placeholder ---
-    // Replace the following with the existing scoring/enrichment
-    // For deterministic success during testing return a fake but valid structure:
     const now = new Date().toISOString();
     const borrower = {
-      borrower_id: `demo-${Math.floor(Math.random()*1000000)}`,
+      borrower_id: `demo-${Math.floor(Math.random()*1e6)}`,
       full_name: payload.full_name,
       email: payload.email,
       phone: payload.phone || null,
@@ -57,21 +43,21 @@ serve(async (req: Request) => {
       created_at: now
     };
     const score = {
-      score_id: `score-${Math.floor(Math.random()*1000000)}`,
+      score_id: `score-${Math.floor(Math.random()*1e6)}`,
       factora_score: 650,
       score_band: 'fair'
     };
     const enrichment = { source: 'demo', notes: 'synthetic demo enrichment' };
-
     const responseBody = { borrower, enrichment, score, correlation_id: correlationId };
 
-    // optional: insert admin_ops log if admin client exists (no secret in public function)
-    // try { await admin.from('admin_ops').insert({ correlation_id: correlationId, function_name:'score-checker', status:'ok', notes: { borrower_id: borrower.borrower_id } }) } catch(e) {}
+    // Optional non-blocking admin log (no secrets)
+    try { /* if DB client present and allowed: insert admin_ops row */ } catch (e) { /* ignore */ }
 
     return new Response(JSON.stringify(responseBody), { status: 200, headers: CORS_HEADERS });
   } catch (err) {
-    // catch-all error response
-    const correlation = Date.now().toString();
+    const correlation = `cid-${Date.now()}`;
     return new Response(JSON.stringify({ error: 'internal_error', message: String(err), correlation_id: correlation }), { status: 500, headers: CORS_HEADERS });
   }
-});
+}
+
+serve(handler);

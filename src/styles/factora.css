@@ -60,7 +60,7 @@
   font-size: 2.25rem;
   font-weight: 700;
   color: #1a202c;
-  margin-bottom: 6px;
+  margin: 0 0 8px 0;
   line-height: 1.05;
 }
 
@@ -73,16 +73,15 @@
 .cta-button,
 .cta {
   display: inline-block;
-  background: linear-gradient(135deg, #0b74de 0%, #0a5fb8 100%);
-  color: white;
-  font-size: 1.125rem;
-  font-weight: 600;
   padding: 16px 28px;
-  border: none;
+  font-size: 1.125rem;
   border-radius: 14px;
-  cursor: pointer;
-  transition: transform 0.14s ease, box-shadow 0.14s ease;
   box-shadow: 0 10px 30px rgba(11, 116, 222, 0.18);
+  transition: transform .14s ease, box-shadow .14s ease;
+  background: #0b74de;
+  color: #fff;
+  border: none;
+  cursor: pointer;
   text-decoration: none;
 }
 

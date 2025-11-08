@@ -113,7 +113,11 @@ export const FactoraPage: React.FC = () => {
 
       const data = result.json;
 
-      if (!data.borrower || !data.score) {
+      // Defensive parsing as per mandate
+      const borrower = data?.borrower || data?.data?.borrower || data?.payload?.borrower;
+      const score = data?.score || data?.data?.score || data?.payload?.score;
+
+      if (!borrower || !score) {
         console.error('[FactoraPage] Invalid response schema:', data);
         throw new Error('Invalid response from server - missing required fields');
       }
@@ -121,11 +125,16 @@ export const FactoraPage: React.FC = () => {
       // Add correlation ID to console for debugging
       console.log('[FactoraPage] Success! Correlation ID:', result.correlationId);
       console.log('[FactoraPage] Profile data:', {
-        borrower_id: data.borrower.borrower_id,
-        score: data.score.factora_score,
+        borrower_id: borrower.borrower_id,
+        score: score.factora_score,
       });
 
-      setResults(data);
+      setResults({
+        borrower,
+        score,
+        enrichment: data.enrichment || data?.data?.enrichment || {},
+        correlation_id: result.correlationId,
+      });
       setView('results');
     } catch (error) {
       console.error('[FactoraPage] Score check failed:', error);
