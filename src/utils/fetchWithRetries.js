@@ -18,3 +18,32 @@ export default async function fetchWithRetries(url, opts = {}, maxAttempts = 3) 
   }
   return { ok: false, error: lastErr, correlationId };
 }
+
+// Also export as named export for compatibility
+export { fetchWithRetries };
+
+// Create a demo profile response for fallback mode
+export function createDemoProfile(fullName) {
+  const now = new Date().toISOString();
+  return {
+    borrower: {
+      borrower_id: 'demo-0001',
+      full_name: fullName || 'Demo User',
+      email: 'demo@example.com',
+      phone: null,
+      national_id: '000000000',
+      created_at: now,
+    },
+    score: {
+      score_id: 'demo-score-0001',
+      factora_score: 650,
+      score_band: 'fair',
+    },
+    enrichment: {
+      source: 'demo',
+      notes: 'synthetic demo enrichment - service unavailable',
+    },
+    correlation_id: `demo-${Date.now()}`,
+    _isDemo: true,
+  };
+}

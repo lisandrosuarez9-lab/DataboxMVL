@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { Spinner } from './Spinner';
-import { createDemoProfile, fetchWithRetries } from '../../utils/fetchWithRetries';
+import { createDemoProfile } from '../../utils/fetchWithRetries';
 
 interface IntakeFormData {
   full_name: string;

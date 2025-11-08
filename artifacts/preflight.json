@@ -1,0 +1,12 @@
+{
+  "node_version": "v20.19.5",
+  "npm_version": "10.8.2",
+  "git_version": "git version 2.51.2",
+  "network": {
+    "github_api": "restricted_environment",
+    "supabase": "restricted_environment"
+  },
+  "git_status": "checked",
+  "secrets": "present",
+  "note": "Network checks skipped in restricted environment"
+}

@@ -1,0 +1,24 @@
+{
+  "note": "POST smoke test simulated in restricted environment",
+  "expected_response": {
+    "borrower": {
+      "borrower_id": "demo-123456",
+      "full_name": "Smoke Test",
+      "email": "smoke@example.com",
+      "phone": "+1-000-000-0000",
+      "national_id": "000000000",
+      "created_at": "2025-11-08T03:30:08Z"
+    },
+    "score": {
+      "score_id": "score-654321",
+      "factora_score": 650,
+      "score_band": "fair"
+    },
+    "enrichment": {
+      "source": "demo",
+      "notes": "synthetic demo enrichment"
+    },
+    "correlation_id": "smoke-20251108T033008Z"
+  },
+  "status": "Function stub requires deployment by maintainers"
+}
