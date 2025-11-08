@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { Hero } from '../components/factora/Hero';
 import { IntakeForm } from '../components/factora/IntakeForm';
 import { ProfileCard } from '../components/factora/ProfileCard';
+import { fetchWithRetries } from '../utils/fetchWithRetries';
 import '../styles/factora.css';
 
 type ViewState = 'hero' | 'form' | 'results';
@@ -24,12 +25,16 @@ interface ScoreResponse {
     ip_address?: string;
     user_agent?: string;
     timestamp?: string;
+    source?: string;
+    notes?: string;
   };
   score: {
     factora_score: number;
     score_band?: string;
     risk_level?: string;
   };
+  correlation_id?: string;
+  _isDemo?: boolean;
 }
 
 export const FactoraPage: React.FC = () => {
@@ -41,6 +46,14 @@ export const FactoraPage: React.FC = () => {
   };
 
   const handleFormSubmit = async (formData: any) => {
+    // Check if this is a demo profile passed from IntakeForm
+    if (formData._profileData) {
+      console.log('[FactoraPage] Received demo profile from IntakeForm');
+      setResults(formData._profileData);
+      setView('results');
+      return;
+    }
+
     const scoreCheckerUrl = import.meta.env.VITE_PROFILE_FN_URL || 
       import.meta.env.VITE_SCORE_CHECKER_URL ||
       'https://rzashahhkafjicjpupww.supabase.co/functions/v1/score-checker';
@@ -58,35 +71,65 @@ export const FactoraPage: React.FC = () => {
       prior_borrowing: formData.prior_borrowing,
     };
 
+    console.log('[FactoraPage] Submitting to score-checker:', scoreCheckerUrl);
+
     try {
-      const response = await fetch(scoreCheckerUrl, {
+      const result = await fetchWithRetries(scoreCheckerUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Origin': window.location.origin,
         },
         body: JSON.stringify(payload),
+        maxAttempts: 3,
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      console.log('[FactoraPage] Fetch result:', {
+        ok: result.ok,
+        status: result.status,
+        correlationId: result.correlationId,
+      });
+
+      if (!result.ok) {
+        // Map status codes to user-friendly messages
+        if (result.status === 401 || result.status === 403) {
+          throw new Error(
+            'Service unavailable — authentication required. Please contact support.'
+          );
+        } else if (result.status >= 500) {
+          throw new Error(
+            `Temporary server error (${result.status}) — please try again. Correlation ID: ${result.correlationId}`
+          );
+        } else if (result.status === 0 || result.error) {
+          throw new Error(
+            `Network error — unable to reach server. Please check your connection and try again.`
+          );
+        } else {
+          throw new Error(
+            `Error ${result.status}: ${result.json?.error || 'Unknown error'}. Correlation ID: ${result.correlationId}`
+          );
+        }
       }
 
-      const data = await response.json();
+      const data = result.json;
 
       if (!data.borrower || !data.score) {
-        throw new Error('Invalid response from server');
+        console.error('[FactoraPage] Invalid response schema:', data);
+        throw new Error('Invalid response from server - missing required fields');
       }
+
+      // Add correlation ID to console for debugging
+      console.log('[FactoraPage] Success! Correlation ID:', result.correlationId);
+      console.log('[FactoraPage] Profile data:', {
+        borrower_id: data.borrower.borrower_id,
+        score: data.score.factora_score,
+      });
 
       setResults(data);
       setView('results');
     } catch (error) {
-      console.error('Score check failed:', error);
-      throw new Error(
-        error instanceof Error
-          ? error.message
-          : 'Failed to check credit score. Please try again.'
-      );
+      console.error('[FactoraPage] Score check failed:', error);
+      throw error; // Re-throw to let IntakeForm handle it
     }
   };
 
@@ -114,6 +157,7 @@ export const FactoraPage: React.FC = () => {
             enrichment={results.enrichment}
             score={results.score}
             onReset={handleReset}
+            isDemo={results._isDemo}
           />
         )}
       </div>

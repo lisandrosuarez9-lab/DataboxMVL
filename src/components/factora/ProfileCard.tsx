@@ -31,12 +31,14 @@ interface ProfileCardProps {
   enrichment?: EnrichmentData;
   score: ScoreData;
   onReset: () => void;
+  isDemo?: boolean;
 }
 
 export const ProfileCard: React.FC<ProfileCardProps> = ({
   borrower,
   score,
   onReset,
+  isDemo = false,
 }) => {
   const getScoreColor = (factora_score: number) => {
     if (factora_score >= 700) return 'score-excellent';
@@ -54,6 +56,25 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
 
   return (
     <div className="profile-card">
+      {isDemo && (
+        <div 
+          style={{
+            background: '#fff7e6',
+            border: '2px solid #ffa940',
+            borderRadius: '8px',
+            padding: '0.75rem 1rem',
+            marginBottom: '1.5rem',
+            textAlign: 'center',
+          }}
+          role="alert"
+        >
+          <strong style={{ color: '#d46b08' }}>📊 Demo Profile</strong>
+          <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: '#ad6800' }}>
+            Demo profile shown because live scoring is unavailable
+          </p>
+        </div>
+      )}
+      
       <div className="profile-header">
         <h2>Your Factora Credit Score</h2>
       </div>
