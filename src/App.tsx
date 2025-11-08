@@ -15,6 +15,7 @@ import RiskSealIntegration from '@/pages/showcase/RiskSealIntegration';
 import AlternateScoring from '@/pages/showcase/AlternateScoring';
 import Sandbox from '@/pages/showcase/Sandbox';
 import ComplianceAudits from '@/pages/showcase/ComplianceAudits';
+import { FactoraPage } from '@/pages/FactoraPage';
 import '@/styles/globals.css';
 
 const App: React.FC = () => {
@@ -25,6 +26,9 @@ const App: React.FC = () => {
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
+            
+            {/* Factora Single-CTA Page - Standalone, no layout */}
+            <Route path="/factora" element={<FactoraPage />} />
             
             {/* Protected routes with layout */}
             <Route path="/" element={
