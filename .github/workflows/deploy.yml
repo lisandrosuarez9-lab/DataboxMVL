@@ -43,6 +43,11 @@ jobs:
           echo "VITE_SCORE_CHECKER_URL=https://rzashahhkafjicjpupww.supabase.co/functions/v1/score-checker" >> .env.production
         
       - name: Build
+        env:
+          VITE_SUPABASE_URL: https://rzashahhkafjicjpupww.supabase.co
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_PROFILE_FN_URL: https://rzashahhkafjicjpupww.supabase.co/functions/v1/score-checker
+          VITE_SCORE_CHECKER_URL: https://rzashahhkafjicjpupww.supabase.co/functions/v1/score-checker
         run: npm run build
         
       - name: Setup Pages
