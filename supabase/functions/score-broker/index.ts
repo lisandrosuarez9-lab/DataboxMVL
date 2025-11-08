@@ -12,9 +12,9 @@ const CORS_HEADERS = {
   'Access-Control-Max-Age': '86400'
 };
 
-const TOKEN_TTL_SECONDS = 45;
+const TOKEN_TTL_SECONDS = 30;
 
-// Rate limit configuration (soft limits - log only)
+// Rate limit configuration (hard limits - return 429)
 const RATE_LIMIT_PII_PER_MINUTE = 1;
 const RATE_LIMIT_REQUESTER_PER_HOUR = 10;
 
@@ -105,10 +105,27 @@ function generateNonce(): string {
 // Load EdDSA private key from Supabase secret
 async function loadPrivateKey(): Promise<jose.KeyLike> {
   try {
-    const jwkJson = Deno.env.get('SCORE_BROKER_ED25519_JWK');
+    // Prefer base64-encoded JWK (Windows PowerShell safe)
+    let jwkJson = Deno.env.get('SCORE_BROKER_ED25519_JWK_B64');
+    
+    if (jwkJson) {
+      // Decode from base64
+      try {
+        jwkJson = atob(jwkJson);
+      } catch (e) {
+        log('ERROR', 'key_load_failed', {
+          error_message: 'Failed to decode base64 JWK',
+          error_type: 'key_configuration'
+        });
+        throw new Error('Failed to decode base64 signing key');
+      }
+    } else {
+      // Fallback to raw JSON string
+      jwkJson = Deno.env.get('SCORE_BROKER_ED25519_JWK');
+    }
     
     if (!jwkJson) {
-      throw new Error('SCORE_BROKER_ED25519_JWK secret not configured');
+      throw new Error('SCORE_BROKER_ED25519_JWK_B64 or SCORE_BROKER_ED25519_JWK secret not configured');
     }
     
     const jwk = JSON.parse(jwkJson);
@@ -231,7 +248,7 @@ async function handler(req: Request) {
     // Generate requester_id (hash of email domain for privacy)
     const requesterIdHash = await hashNationalId(emailDomain);
     
-    // Check rate limits (soft - log only, does not block)
+    // Check rate limits (hard limits - return 429 on exceeded)
     const piiRateLimit = checkRateLimit(`pii:${piiHash}`, RATE_LIMIT_PII_PER_MINUTE, 60);
     const requesterRateLimit = checkRateLimit(`requester:${requesterIdHash}`, RATE_LIMIT_REQUESTER_PER_HOUR, 3600);
     
@@ -242,7 +259,13 @@ async function handler(req: Request) {
         pii_hash_truncated: truncateHash(piiHash),
         count: piiRateLimit.count,
         limit: RATE_LIMIT_PII_PER_MINUTE,
-        action: 'log_only'
+        duration_ms: Date.now() - startTime
+      });
+      return makeResponse(429, {
+        error: 'rate_limit_exceeded',
+        limit_type: 'pii_per_minute',
+        retry_after_seconds: 60,
+        correlation_id: correlationId
       });
     }
     
@@ -253,7 +276,13 @@ async function handler(req: Request) {
         requester_id: truncateHash(requesterIdHash),
         count: requesterRateLimit.count,
         limit: RATE_LIMIT_REQUESTER_PER_HOUR,
-        action: 'log_only'
+        duration_ms: Date.now() - startTime
+      });
+      return makeResponse(429, {
+        error: 'rate_limit_exceeded',
+        limit_type: 'requester_per_hour',
+        retry_after_seconds: 3600,
+        correlation_id: correlationId
       });
     }
 
