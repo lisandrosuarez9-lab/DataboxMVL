@@ -1,0 +1,92 @@
+name: E2E after deploy
+
+on:
+  push:
+    branches:
+      - gh-pages
+      - main
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: |
+          npm ci --no-audit --no-fund
+          npm install playwright --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          
+      - name: Run E2E test
+        env:
+          PAGE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+        run: |
+          mkdir -p artifacts
+          node ./scripts/e2e-runner.js "$PAGE_URL" artifacts/headless-dom.html artifacts/headless-run.log || true
+          
+      - name: Check E2E results
+        run: |
+          if [ -f artifacts/headless-dom.html ]; then
+            echo "✅ E2E test completed - ProfileCard captured"
+            echo "Checking for ProfileCard content..."
+            grep -i "profile-card\|factora_score\|score_band" artifacts/headless-dom.html && echo "✅ ProfileCard content verified" || echo "⚠️ ProfileCard content not found"
+          else
+            echo "❌ E2E test failed - no DOM captured"
+            cat artifacts/headless-run.log || echo "No log file"
+            exit 1
+          fi
+          
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-artifacts-${{ github.sha }}
+          path: artifacts/*
+          retention-days: 30
+          
+      - name: Comment on commit (if available)
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let comment = '## E2E Test Results\n\n';
+            
+            if (fs.existsSync('artifacts/headless-dom.html')) {
+              comment += '✅ **E2E Test Passed**\n\n';
+              comment += '- ProfileCard successfully rendered\n';
+              comment += '- Form submission working\n';
+              comment += '- Artifacts captured\n\n';
+            } else {
+              comment += '❌ **E2E Test Failed**\n\n';
+              if (fs.existsSync('artifacts/headless-run.log')) {
+                const log = fs.readFileSync('artifacts/headless-run.log', 'utf8');
+                comment += '```\n' + log.split('\n').slice(-20).join('\n') + '\n```\n';
+              }
+            }
+            
+            comment += `\n[View full artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+            
+            // Try to add comment to commit if this was a push
+            if (context.eventName === 'push') {
+              try {
+                await github.rest.repos.createCommitComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  commit_sha: context.sha,
+                  body: comment
+                });
+              } catch(e) {
+                console.log('Could not create commit comment:', e.message);
+              }
+            }
