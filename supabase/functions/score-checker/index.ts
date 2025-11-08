@@ -5,7 +5,7 @@ const ALLOWED_ORIGIN = 'https://lisandrosuarez9-lab.github.io';
 const CORS_HEADERS = {
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Factora-Correlation-Id',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Factora-Correlation-Id, X-Factora-Client',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Max-Age': '86400'
 };
