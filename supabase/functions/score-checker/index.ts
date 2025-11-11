@@ -2,15 +2,7 @@
 // Phase 1: Verifies EdDSA (Ed25519) signed JWT tokens with replay protection
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import * as jose from 'https://deno.land/x/jose@v5.2.0/index.ts';
-
-const ALLOWED_ORIGIN = 'https://lisandrosuarez9-lab.github.io';
-const CORS_HEADERS = {
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
-  'Access-Control-Allow-Headers': 'content-type, authorization, x-factora-client, x-correlation-id',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Max-Age': '86400'
-};
+import { corsHeaders } from "../_shared/cors.ts";
 
 // In-memory nonce tracking for replay protection
 // Maps nonce -> expiration timestamp
@@ -122,7 +114,13 @@ function checkNonceReplay(nonce: string, exp: number): boolean {
 }
 
 function makeResponse(status: number, payload: any) {
-  return new Response(JSON.stringify(payload), { status, headers: CORS_HEADERS });
+  return new Response(JSON.stringify(payload), { 
+    status, 
+    headers: { 
+      ...corsHeaders, 
+      "Content-Type": "application/json" 
+    } 
+  });
 }
 
 async function handler(req: Request) {
@@ -130,7 +128,7 @@ async function handler(req: Request) {
   
   try {
     if (req.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: CORS_HEADERS });
+      return new Response('ok', { status: 200, headers: corsHeaders });
     }
     if (req.method !== 'POST') {
       return makeResponse(405, { error: 'method_not_allowed' });
@@ -283,7 +281,13 @@ async function handler(req: Request) {
     // Optional non-blocking admin log (no secrets)
     try { /* if DB client present and allowed: insert admin_ops row */ } catch (e) { /* ignore */ }
 
-    return new Response(JSON.stringify(responseBody), { status: 200, headers: CORS_HEADERS });
+    return new Response(JSON.stringify(responseBody), { 
+      status: 200, 
+      headers: { 
+        ...corsHeaders, 
+        "Content-Type": "application/json" 
+      } 
+    });
   } catch (err) {
     const correlation = req.headers?.get?.('x-correlation-id') || 
                        req.headers?.get?.('x-factora-correlation-id') ||
@@ -296,7 +300,13 @@ async function handler(req: Request) {
       duration_ms: Date.now() - startTime
     });
     
-    return new Response(JSON.stringify({ error: 'internal_error', correlation_id: correlation }), { status: 500, headers: CORS_HEADERS });
+    return new Response(JSON.stringify({ error: 'internal_error', correlation_id: correlation }), { 
+      status: 500, 
+      headers: { 
+        ...corsHeaders, 
+        "Content-Type": "application/json" 
+      } 
+    });
   }
 }
 
