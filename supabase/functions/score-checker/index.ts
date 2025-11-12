@@ -2,7 +2,7 @@
 // Phase 1: Verifies EdDSA (Ed25519) signed JWT tokens with replay protection
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import * as jose from 'https://deno.land/x/jose@v5.2.0/index.ts';
-import { corsHeaders } from "../_shared/cors.ts";
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 // In-memory nonce tracking for replay protection
 // Maps nonce -> expiration timestamp
@@ -113,7 +113,8 @@ function checkNonceReplay(nonce: string, exp: number): boolean {
   return false;
 }
 
-function makeResponse(status: number, payload: any) {
+function makeResponse(status: number, payload: any, req: Request) {
+  const corsHeaders = getCorsHeaders(req);
   return new Response(JSON.stringify(payload), { 
     status, 
     headers: { 
@@ -128,10 +129,11 @@ async function handler(req: Request) {
   
   try {
     if (req.method === 'OPTIONS') {
+      const corsHeaders = getCorsHeaders(req);
       return new Response('ok', { status: 200, headers: corsHeaders });
     }
     if (req.method !== 'POST') {
-      return makeResponse(405, { error: 'method_not_allowed' });
+      return makeResponse(405, { error: 'method_not_allowed' }, req);
     }
 
     // Parse correlation_id from header
@@ -178,7 +180,7 @@ async function handler(req: Request) {
               error: 'invalid_token',
               message: 'Missing required claims',
               correlation_id: headerCorrelationId || 'unknown'
-            });
+            }, req);
           }
           
           // Check nonce replay
@@ -193,7 +195,7 @@ async function handler(req: Request) {
               error: 'token_replay',
               message: 'Token has already been used',
               correlation_id: payload.correlation_id as string
-            });
+            }, req);
           }
           
           // Validate TTL (exp is already checked by jose.jwtVerify, but log it)
@@ -225,7 +227,7 @@ async function handler(req: Request) {
             error: 'invalid_token',
             message: 'Token verification failed',
             correlation_id: headerCorrelationId || 'unknown'
-          });
+          }, req);
         }
       }
     } else {
@@ -242,11 +244,11 @@ async function handler(req: Request) {
 
     let payload;
     try { payload = await req.json(); } catch (e) {
-      return makeResponse(400, { error: 'invalid_json', correlation_id: correlationId });
+      return makeResponse(400, { error: 'invalid_json', correlation_id: correlationId }, req);
     }
 
     if (!payload?.full_name || !payload?.email || !payload?.national_id) {
-      return makeResponse(400, { error: 'missing_fields', correlation_id: correlationId });
+      return makeResponse(400, { error: 'missing_fields', correlation_id: correlationId }, req);
     }
 
     const now = new Date().toISOString();
@@ -281,6 +283,7 @@ async function handler(req: Request) {
     // Optional non-blocking admin log (no secrets)
     try { /* if DB client present and allowed: insert admin_ops row */ } catch (e) { /* ignore */ }
 
+    const corsHeaders = getCorsHeaders(req);
     return new Response(JSON.stringify(responseBody), { 
       status: 200, 
       headers: { 
@@ -300,6 +303,7 @@ async function handler(req: Request) {
       duration_ms: Date.now() - startTime
     });
     
+    const corsHeaders = getCorsHeaders(req);
     return new Response(JSON.stringify({ error: 'internal_error', correlation_id: correlation }), { 
       status: 500, 
       headers: { 
