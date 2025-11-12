@@ -8,15 +8,11 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 // Maps nonce -> expiration timestamp
 const usedNonces = new Map<string, number>();
 
-// Cleanup interval for expired nonces (every 60 seconds)
-setInterval(() => {
-  const now = Date.now();
-  for (const [nonce, expiry] of usedNonces.entries()) {
-    if (expiry < now) {
-      usedNonces.delete(nonce);
-    }
-  }
-}, 60000);
+// Module-level initialization error tracking
+let initError: Error | null = null;
+
+// Cleanup interval ID for proper lifecycle management
+let cleanupIntervalId: number | null = null;
 
 /**
  * JWK Structure for EdDSA (Ed25519) public key verification:
@@ -40,6 +36,37 @@ function log(level: string, event: string, metadata: Record<string, any> = {}) {
     event,
     ...metadata
   }));
+}
+
+/**
+ * Safe initialization that captures errors without throwing
+ * This ensures Deno.serve() always starts even if initialization fails
+ */
+async function performInit(): Promise<void> {
+  try {
+    // Start cleanup interval for expired nonces (every 60 seconds)
+    cleanupIntervalId = setInterval(() => {
+      const now = Date.now();
+      for (const [nonce, expiry] of usedNonces.entries()) {
+        if (expiry < now) {
+          usedNonces.delete(nonce);
+        }
+      }
+    }, 60000);
+
+    log('INFO', 'initialization_complete', {
+      function_name: 'score-checker',
+      nonce_cleanup_enabled: true
+    });
+  } catch (error) {
+    // Capture initialization error without throwing
+    initError = error instanceof Error ? error : new Error(String(error));
+    log('ERROR', 'initialization_failed', {
+      function_name: 'score-checker',
+      error_message: initError.message,
+      error_type: 'init_failed'
+    });
+  }
 }
 
 // Load EdDSA public key from Supabase secret
@@ -127,11 +154,33 @@ function makeResponse(status: number, payload: any, req: Request) {
 async function handler(req: Request) {
   const startTime = Date.now();
   
+  // Handle OPTIONS preflight immediately
+  if (req.method === 'OPTIONS') {
+    const corsHeaders = getCorsHeaders(req);
+    return new Response('ok', { status: 200, headers: corsHeaders });
+  }
+
+  // Check if initialization failed
+  if (initError) {
+    log('ERROR', 'request_rejected_init_failed', {
+      correlation_id: req.headers.get('x-correlation-id') || 
+                     req.headers.get('x-factora-correlation-id') || 
+                     'unknown',
+      error_message: initError.message,
+      duration_ms: Date.now() - startTime
+    });
+    
+    return makeResponse(500, { 
+      ok: false,
+      error: 'init_failed',
+      message: initError.message,
+      correlation_id: req.headers.get('x-correlation-id') || 
+                     req.headers.get('x-factora-correlation-id') || 
+                     'unknown'
+    }, req);
+  }
+  
   try {
-    if (req.method === 'OPTIONS') {
-      const corsHeaders = getCorsHeaders(req);
-      return new Response('ok', { status: 200, headers: corsHeaders });
-    }
     if (req.method !== 'POST') {
       return makeResponse(405, { error: 'method_not_allowed' }, req);
     }
@@ -314,4 +363,9 @@ async function handler(req: Request) {
   }
 }
 
+// Initialize safely before starting the server
+// This ensures the server always starts even if initialization fails
+await performInit();
+
+// Start the server - always runs even if performInit() captured an error
 serve(handler);
